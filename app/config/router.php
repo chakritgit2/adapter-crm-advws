@@ -116,46 +116,6 @@ $tenantGroup->addGet('/dashboard/help-center', [
     'action' => 'helpCenter'
 ]);
 
-// Employee Milestone Event Types routes
-$tenantGroup->addGet('/dashboard/settings/employee-milestone-event-types', [
-    'action' => 'employeeMilestoneEventTypes'
-]);
-$tenantGroup->addGet('/dashboard/settings/employee-milestone-event-types/create', [
-    'action' => 'employeeMilestoneEventTypesCreate'
-]);
-$tenantGroup->addPost('/dashboard/settings/employee-milestone-event-types/store', [
-    'action' => 'employeeMilestoneEventTypesStore'
-]);
-$tenantGroup->addGet('/dashboard/settings/employee-milestone-event-types/edit/{id:[0-9]+}', [
-    'action' => 'employeeMilestoneEventTypesEdit'
-]);
-$tenantGroup->addPost('/dashboard/settings/employee-milestone-event-types/update/{id:[0-9]+}', [
-    'action' => 'employeeMilestoneEventTypesUpdate'
-]);
-$tenantGroup->addPost('/dashboard/settings/employee-milestone-event-types/delete/{id:[0-9]+}', [
-    'action' => 'employeeMilestoneEventTypesDelete'
-]);
-
-// Job Levels routes
-$tenantGroup->addGet('/dashboard/settings/job-levels', [
-    'action' => 'jobLevels'
-]);
-$tenantGroup->addGet('/dashboard/settings/job-levels/create', [
-    'action' => 'jobLevelsCreate'
-]);
-$tenantGroup->addPost('/dashboard/settings/job-levels/store', [
-    'action' => 'jobLevelsStore'
-]);
-$tenantGroup->addGet('/dashboard/settings/job-levels/edit/{id:[0-9]+}', [
-    'action' => 'jobLevelsEdit'
-]);
-$tenantGroup->addPost('/dashboard/settings/job-levels/update/{id:[0-9]+}', [
-    'action' => 'jobLevelsUpdate'
-]);
-$tenantGroup->addPost('/dashboard/settings/job-levels/delete/{id:[0-9]+}', [
-    'action' => 'jobLevelsDelete'
-]);
-
 // Custom Attributes routes
 $tenantGroup->addGet('/dashboard/settings/custom-attributes', [
     'action' => 'customAttributes'
@@ -194,94 +154,6 @@ $tenantGroup->addPost('/dashboard/settings/admin-users/update/{id:[0-9]+}', [
 ]);
 $tenantGroup->addPost('/dashboard/settings/admin-users/delete/{id:[0-9]+}', [
     'action' => 'adminUsersDelete'
-]);
-
-// Leave Management routes
-$tenantGroup->addGet('/dashboard/settings/leave-policies', [
-    'action' => 'leavePolicies'
-]);
-$tenantGroup->addGet('/dashboard/settings/leave-policies/create', [
-    'action' => 'leavePoliciesCreate'
-]);
-$tenantGroup->addPost('/dashboard/settings/leave-policies/store', [
-    'action' => 'leavePoliciesStore'
-]);
-$tenantGroup->addGet('/dashboard/settings/leave-policies/edit/{id:[0-9a-fA-F-]{36}}', [
-    'action' => 'leavePoliciesEdit'
-]);
-$tenantGroup->addPost('/dashboard/settings/leave-policies/update/{id:[0-9a-fA-F-]{36}}', [
-    'action' => 'leavePoliciesUpdate'
-]);
-$tenantGroup->addPost('/dashboard/settings/leave-policies/delete/{id:[0-9a-fA-F-]{36}}', [
-    'action' => 'leavePoliciesDelete'
-]);
-$tenantGroup->addPost('/dashboard/settings/leave-policies/{id:[0-9a-fA-F-]{36}}/year-end-mode', [
-    'action' => 'leavePoliciesYearEndModeUpdate'
-]);
-
-// Company Holidays routes (Super Admin only)
-$tenantGroup->addGet('/dashboard/settings/company-holidays', [
-    'action' => 'companyHolidays'
-]);
-$tenantGroup->addPost('/dashboard/settings/company-holidays/toggle', [
-    'action' => 'companyHolidaysToggle'
-]);
-
-// Leave Allowance Rules routes
-$tenantGroup->addPost('/dashboard/settings/leave-policies/{id:[0-9a-fA-F-]{36}}/rules/store', [
-    'action' => 'leaveAllowanceRulesStore'
-]);
-$tenantGroup->addPost('/dashboard/settings/leave-policies/{id:[0-9a-fA-F-]{36}}/rules/update/{ruleId:[0-9a-fA-F-]{36}}', [
-    'action' => 'leaveAllowanceRulesUpdate'
-]);
-$tenantGroup->addPost('/dashboard/settings/leave-policies/{id:[0-9a-fA-F-]{36}}/rules/delete/{ruleId:[0-9a-fA-F-]{36}}', [
-    'action' => 'leaveAllowanceRulesDelete'
-]);
-$tenantGroup->addPost('/dashboard/settings/leave-policies/{id:[0-9a-fA-F-]{36}}/rules/recalculate', [
-    'action' => 'leaveAllowanceRulesRecalculate'
-]);
-
-$tenantGroup->addGet('/dashboard/settings/overtime-policies', [
-    'controller' => 'overtime',
-    'action' => 'policies'
-]);
-$tenantGroup->addGet('/dashboard/settings/overtime-policies/create', [
-    'controller' => 'overtime',
-    'action' => 'policiesCreate'
-]);
-$tenantGroup->addPost('/dashboard/settings/overtime-policies/store', [
-    'controller' => 'overtime',
-    'action' => 'policiesStore'
-]);
-$tenantGroup->addGet('/dashboard/settings/overtime-policies/edit/{id:[0-9a-fA-F-]{36}}', [
-    'controller' => 'overtime',
-    'action' => 'policiesEdit'
-]);
-$tenantGroup->addPost('/dashboard/settings/overtime-policies/update/{id:[0-9a-fA-F-]{36}}', [
-    'controller' => 'overtime',
-    'action' => 'policiesUpdate'
-]);
-$tenantGroup->addPost('/dashboard/settings/overtime-policies/delete/{id:[0-9a-fA-F-]{36}}', [
-    'controller' => 'overtime',
-    'action' => 'policiesDelete'
-]);
-
-// Language Management routes
-$tenantGroup->addGet('/dashboard/settings/languages', [
-    'controller' => 'translation',
-    'action' => 'languages'
-]);
-$tenantGroup->addGet('/dashboard/settings/languages/create', [
-    'controller' => 'translation',
-    'action' => 'languagesCreate'
-]);
-$tenantGroup->addPost('/dashboard/settings/languages/store', [
-    'controller' => 'translation',
-    'action' => 'languagesStore'
-]);
-$tenantGroup->addPost('/dashboard/settings/languages/delete/{id:[0-9]+}', [
-    'controller' => 'translation',
-    'action' => 'languagesDelete'
 ]);
 
 // Translation save/delete endpoints (used by settings forms for
@@ -362,10 +234,11 @@ $router->addGet('/', [
 ]);
 
 // Companies routes (global, no tenant slug required)
-// /dashboard lands on the global companies page (post-login target)
+// /dashboard redirects to the user's default tenant/company adapter workspace.
+// Company administration remains available at /dashboard/companies.
 $router->addGet('/dashboard', [
     'controller' => 'index',
-    'action' => 'companies'
+    'action' => 'legacyRedirect'
 ]);
 $router->addGet('/dashboard/companies', [
     'controller' => 'index',

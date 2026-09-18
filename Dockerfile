@@ -31,12 +31,15 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
     curl \
     librabbitmq-dev \
+    libpq-dev \
     libssh-dev \
     libxml2-dev \
     git \
     unzip \
     openssh-server \
-    && docker-php-ext-install pdo_mysql dom bcmath \
+    && docker-php-ext-install pdo_mysql pdo_pgsql dom bcmath \
+    && pecl install mongodb \
+    && docker-php-ext-enable mongodb \
     && curl -sSLo /tmp/amqp.tgz https://pecl.php.net/get/amqp \
     && pecl install /tmp/amqp.tgz \
     && docker-php-ext-enable amqp \

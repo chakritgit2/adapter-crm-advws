@@ -126,7 +126,7 @@ class AdapterApiController extends \Phalcon\Mvc\Controller
                 'event_type' => 'endpoint_query',
                 'status' => 'failure',
                 'duration_ms' => (int)round((microtime(true) - $startedAt) * 1000),
-                'message' => 'External query failed.',
+                'message' => 'External query failed: ' . $e->getMessage(),
             ]);
             return $this->respond(
                 ['status' => 'error', 'error' => ['code' => 'SOURCE_UNAVAILABLE', 'message' => 'The configured source is temporarily unavailable.']],

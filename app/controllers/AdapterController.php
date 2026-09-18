@@ -124,7 +124,7 @@ class AdapterController extends TenantBaseController
                 'event_type' => 'connection_test',
                 'status' => 'failure',
                 'duration_ms' => (int)round((microtime(true) - $startedAt) * 1000),
-                'message' => 'Connection test failed.',
+                'message' => 'Connection test failed: ' . $e->getMessage(),
             ]);
             return $this->json(['status' => 'error', 'message' => 'Connection test failed.'], 502);
         }
@@ -225,6 +225,7 @@ class AdapterController extends TenantBaseController
         $dbName = trim((string)$this->request->getPost('db_name', 'string'));
         $username = trim((string)$this->request->getPost('username', 'string'));
         $password = (string)$this->request->getPost('password', 'string');
+        $optionsJson = trim((string)$this->request->getPost('options_json', 'string'));
         if ($name === '' || $host === '' || $dbName === '' || !in_array($engine, ['mysql', 'mariadb', 'pgsql', 'mongodb'], true)) {
             return ['error' => 'Name, engine, host, and database are required.', 'values' => []];
         }
@@ -235,10 +236,19 @@ class AdapterController extends TenantBaseController
         if ($password !== '') {
             $ciphertext = $this->getDI()->get('adapterEncryption')->encrypt($password);
         }
+        if ($optionsJson === '') {
+            $optionsJson = $existing['options_json'] ?? null;
+        } else {
+            $options = json_decode($optionsJson, true);
+            if (!is_array($options)) {
+                return ['error' => 'Driver options must be valid JSON.', 'values' => []];
+            }
+            $optionsJson = json_encode($options, JSON_UNESCAPED_SLASHES);
+        }
         return ['error' => null, 'values' => [
             'name' => $name, 'engine' => $engine, 'host' => $host, 'port' => $port,
             'db_name' => $dbName, 'username' => $username, 'password_ciphertext' => $ciphertext,
-            'options_json' => null,
+            'options_json' => $optionsJson,
         ]];
     }
 
@@ -266,7 +276,8 @@ class AdapterController extends TenantBaseController
     private function connectionLogs(): array
     {
         return $this->db->fetchAll(
-            "SELECT l.created_at, l.event_type, l.status, l.duration_ms, l.message, c.name AS connection_name
+            "SELECT l.id, l.created_at, l.connection_id, l.event_type, l.status, l.duration_ms, l.message,
+                    c.name AS connection_name, c.engine, c.host, c.port, c.db_name
              FROM adapter_connection_logs l
              LEFT JOIN adapter_connections c ON c.id = l.connection_id
              WHERE l.tenant_id = :tenant_id AND l.company_id = :company_id
@@ -279,10 +290,14 @@ class AdapterController extends TenantBaseController
     private function endpointLogs(): array
     {
         return $this->db->fetchAll(
-            "SELECT created_at, api_name, status_code, auth_result, row_count, duration_ms, request_id
-             FROM adapter_endpoint_logs
-             WHERE tenant_id = :tenant_id AND company_id = :company_id
-             ORDER BY created_at DESC, id DESC LIMIT 100",
+            "SELECT l.id, l.created_at, l.endpoint_id, l.api_name, l.status_code, l.auth_result, l.row_count,
+                    l.duration_ms, l.request_id, l.error_code, l.client_ip,
+                    e.connection_id, c.name AS connection_name, c.engine, c.host, c.port, c.db_name
+             FROM adapter_endpoint_logs l
+             LEFT JOIN adapter_endpoints e ON e.id = l.endpoint_id
+             LEFT JOIN adapter_connections c ON c.id = e.connection_id
+             WHERE l.tenant_id = :tenant_id AND l.company_id = :company_id
+             ORDER BY l.created_at DESC, l.id DESC LIMIT 100",
             DbEnum::FETCH_ASSOC,
             ['tenant_id' => $this->currentTenantId, 'company_id' => $this->currentCompanyId]
         );

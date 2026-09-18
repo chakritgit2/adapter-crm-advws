@@ -41,8 +41,16 @@ class AdapterConnectionService
             if (!class_exists('MongoDB\\Driver\\Manager')) {
                 throw new RuntimeException('MongoDB support requires the mongodb PHP extension.');
             }
+            $options = [];
+            if (!empty($connection['options_json'])) {
+                $options = json_decode((string)$connection['options_json'], true) ?: [];
+            }
             $credentials = $username !== '' ? rawurlencode($username) . ':' . rawurlencode($password) . '@' : '';
             $uri = sprintf('mongodb://%s%s:%d', $credentials, $host, $port ?: 27017);
+            if ($username !== '') {
+                $authSource = (string)($options['authSource'] ?? 'admin');
+                $uri .= '?authSource=' . rawurlencode($authSource);
+            }
             return new MongoDB\Driver\Manager($uri);
         }
 

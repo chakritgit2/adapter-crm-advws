@@ -28,19 +28,6 @@
                 </div>
             </a>
 
-            <a href="/{{ currentTenantSlug }}/{{ currentCompanySlug }}/dashboard/settings/job-levels"
-                class="block bg-white rounded-xl border border-slate-200 p-4 shadow-sm hover:shadow-md hover:border-slate-300 transition notosan">
-                <div class="flex items-center gap-3">
-                    <div class="flex-shrink-0 w-10 h-10 rounded-lg bg-violet-50 flex items-center justify-center">
-                        <i class="fas fa-layer-group text-violet-600 text-base"></i>
-                    </div>
-                    <div class="min-w-0">
-                        <h3 class="text-sm font-semibold text-slate-900">{{ t('settings.index.job_levels') }}</h3>
-                        <p class="text-xs text-slate-500 line-clamp-2">{{ t('settings.index.job_levels_desc') }}</p>
-                    </div>
-                </div>
-            </a>
-
             <a href="/{{ currentTenantSlug }}/{{ currentCompanySlug }}/dashboard/settings/custom-attributes"
                 class="block bg-white rounded-xl border border-slate-200 p-4 shadow-sm hover:shadow-md hover:border-slate-300 transition notosan">
                 <div class="flex items-center gap-3">
@@ -50,19 +37,6 @@
                     <div class="min-w-0">
                         <h3 class="text-sm font-semibold text-slate-900">{{ t('settings.index.custom_attributes') }}</h3>
                         <p class="text-xs text-slate-500 line-clamp-2">{{ t('settings.index.custom_attributes_desc') }}</p>
-                    </div>
-                </div>
-            </a>
-
-            <a href="/{{ currentTenantSlug }}/{{ currentCompanySlug }}/dashboard/settings/employee-milestone-event-types"
-                class="block bg-white rounded-xl border border-slate-200 p-4 shadow-sm hover:shadow-md hover:border-slate-300 transition notosan">
-                <div class="flex items-center gap-3">
-                    <div class="flex-shrink-0 w-10 h-10 rounded-lg bg-rose-50 flex items-center justify-center">
-                        <i class="fas fa-flag text-rose-600 text-base"></i>
-                    </div>
-                    <div class="min-w-0">
-                        <h3 class="text-sm font-semibold text-slate-900">{{ t('settings.index.milestone_event_types') }}</h3>
-                        <p class="text-xs text-slate-500 line-clamp-2">{{ t('settings.index.milestone_event_types_desc') }}</p>
                     </div>
                 </div>
             </a>
@@ -77,45 +51,6 @@
             <p class="text-sm text-slate-500 notosan">{{ t('settings.index.category.time_attendance_desc') }}</p>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-
-            <a href="/{{ currentTenantSlug }}/{{ currentCompanySlug }}/dashboard/settings/leave-policies"
-                class="block bg-white rounded-xl border border-slate-200 p-4 shadow-sm hover:shadow-md hover:border-slate-300 transition notosan">
-                <div class="flex items-center gap-3">
-                    <div class="flex-shrink-0 w-10 h-10 rounded-lg bg-teal-50 flex items-center justify-center">
-                        <i class="fas fa-umbrella-beach text-teal-600 text-base"></i>
-                    </div>
-                    <div class="min-w-0">
-                        <h3 class="text-sm font-semibold text-slate-900">{{ t('settings.index.leave_management') }}</h3>
-                        <p class="text-xs text-slate-500 line-clamp-2">{{ t('settings.index.leave_management_desc') }}</p>
-                    </div>
-                </div>
-            </a>
-
-            <a href="/{{ currentTenantSlug }}/{{ currentCompanySlug }}/dashboard/settings/company-holidays"
-                class="block bg-white rounded-xl border border-slate-200 p-4 shadow-sm hover:shadow-md hover:border-slate-300 transition notosan">
-                <div class="flex items-center gap-3">
-                    <div class="flex-shrink-0 w-10 h-10 rounded-lg bg-rose-50 flex items-center justify-center">
-                        <i class="fas fa-calendar-day text-rose-600 text-base"></i>
-                    </div>
-                    <div class="min-w-0">
-                        <h3 class="text-sm font-semibold text-slate-900">{{ t('settings.index.company_holidays') }}</h3>
-                        <p class="text-xs text-slate-500 line-clamp-2">{{ t('settings.index.company_holidays_desc') }}</p>
-                    </div>
-                </div>
-            </a>
-
-            <a href="/{{ currentTenantSlug }}/{{ currentCompanySlug }}/dashboard/settings/overtime-policies"
-                class="block bg-white rounded-xl border border-slate-200 p-4 shadow-sm hover:shadow-md hover:border-slate-300 transition notosan">
-                <div class="flex items-center gap-3">
-                    <div class="flex-shrink-0 w-10 h-10 rounded-lg bg-orange-50 flex items-center justify-center">
-                        <i class="fas fa-clock text-orange-600 text-base"></i>
-                    </div>
-                    <div class="min-w-0">
-                        <h3 class="text-sm font-semibold text-slate-900">{{ t('settings.index.overtime_management') }}</h3>
-                        <p class="text-xs text-slate-500 line-clamp-2">{{ t('settings.index.overtime_management_desc') }}</p>
-                    </div>
-                </div>
-            </a>
 
         </div>
     </section>
@@ -137,19 +72,6 @@
                     <div class="min-w-0">
                         <h3 class="text-sm font-semibold text-slate-900">{{ t('settings.index.iam') }}</h3>
                         <p class="text-xs text-slate-500 line-clamp-2">{{ t('settings.index.iam_desc') }}</p>
-                    </div>
-                </div>
-            </a>
-
-            <a href="/{{ currentTenantSlug }}/{{ currentCompanySlug }}/dashboard/settings/languages"
-                class="block bg-white rounded-xl border border-slate-200 p-4 shadow-sm hover:shadow-md hover:border-slate-300 transition notosan">
-                <div class="flex items-center gap-3">
-                    <div class="flex-shrink-0 w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center">
-                        <i class="fas fa-language text-indigo-600 text-base"></i>
-                    </div>
-                    <div class="min-w-0">
-                        <h3 class="text-sm font-semibold text-slate-900">{{ t('settings.index.localization') }}</h3>
-                        <p class="text-xs text-slate-500 line-clamp-2">{{ t('settings.index.localization_desc') }}</p>
                     </div>
                 </div>
             </a>

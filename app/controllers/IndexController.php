@@ -314,17 +314,6 @@ class IndexController extends Controller
         }
 
         $employeeCounts = [];
-        if (!empty($companyIds)) {
-            $compPlaceholders = implode(',', array_fill(0, count($companyIds), '?'));
-            $rows = $this->db->fetchAll(
-                "SELECT company_id, COUNT(*) as cnt FROM employees WHERE company_id IN (" . $compPlaceholders . ") GROUP BY company_id",
-                Phalcon\Db\Enum::FETCH_ASSOC,
-                $companyIds
-            );
-            foreach ($rows as $row) {
-                $employeeCounts[(int)$row['company_id']] = (int)$row['cnt'];
-            }
-        }
 
         $this->view->setVar('companies', $companies);
         $this->view->setVar('customAttributes', $customAttributes);

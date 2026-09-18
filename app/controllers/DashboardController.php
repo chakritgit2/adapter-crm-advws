@@ -408,7 +408,7 @@ class DashboardController extends TenantBaseController
      * days are rendered with a distinct colour so they are easy to
      * distinguish from regular days.
      */
-    public function companyHolidaysAction()
+    private function retiredCompanyHolidaysAction()
     {
         if (!$this->isSuperAdmin()) {
             $this->flashSession->error($this->locale->t('flash.super_admin_only_company_holidays'));
@@ -454,7 +454,7 @@ class DashboardController extends TenantBaseController
      * unmark it (delete). An optional holiday name may be supplied when
      * marking. Returns JSON.
      */
-    public function companyHolidaysToggleAction()
+    private function retiredCompanyHolidaysToggleAction()
     {
         $this->view->disable();
 
@@ -553,7 +553,7 @@ class DashboardController extends TenantBaseController
     /**
      * Employee Milestone Event Types
      */
-    public function employeeMilestoneEventTypesAction()
+    private function retiredEmployeeMilestoneEventTypesAction()
     {
         $this->view->setVar('title', $this->locale->t('settings.milestone_event_types.title'));
 
@@ -570,14 +570,14 @@ class DashboardController extends TenantBaseController
         $this->view->pick('dashboard/settings/milestone-event-types');
     }
 
-    public function employeeMilestoneEventTypesCreateAction()
+    private function retiredEmployeeMilestoneEventTypesCreateAction()
     {
         $this->view->setVar('title', $this->locale->t('settings.milestone_event_types.new.title'));
         $this->view->setVar('mode', 'create');
         $this->view->pick('dashboard/settings/milestone-event-types-action');
     }
 
-    public function employeeMilestoneEventTypesStoreAction()
+    private function retiredEmployeeMilestoneEventTypesStoreAction()
     {
         $name = trim($this->request->getPost('name', 'string', ''));
         $nameTh = trim($this->request->getPost('name_th', 'string', ''));
@@ -605,7 +605,7 @@ class DashboardController extends TenantBaseController
         $this->response->redirect($this->tenantUrl('/dashboard/settings/employee-milestone-event-types'));
     }
 
-    public function employeeMilestoneEventTypesEditAction()
+    private function retiredEmployeeMilestoneEventTypesEditAction()
     {
         $id = (int)$this->dispatcher->getParam('id');
 
@@ -652,7 +652,7 @@ class DashboardController extends TenantBaseController
         $this->view->pick('dashboard/settings/milestone-event-types-action');
     }
 
-    public function employeeMilestoneEventTypesUpdateAction()
+    private function retiredEmployeeMilestoneEventTypesUpdateAction()
     {
         $id = (int)$this->dispatcher->getParam('id');
         $name = trim($this->request->getPost('name', 'string', ''));
@@ -700,7 +700,7 @@ class DashboardController extends TenantBaseController
         $this->response->redirect($this->tenantUrl('/dashboard/settings/employee-milestone-event-types'));
     }
 
-    public function employeeMilestoneEventTypesDeleteAction()
+    private function retiredEmployeeMilestoneEventTypesDeleteAction()
     {
         $id = (int)$this->dispatcher->getParam('id');
 
@@ -716,7 +716,7 @@ class DashboardController extends TenantBaseController
     /**
      * Job Levels
      */
-    public function jobLevelsAction()
+    private function retiredJobLevelsAction()
     {
         $this->view->setVar('title', $this->locale->t('settings.job_levels.title'));
 
@@ -733,14 +733,14 @@ class DashboardController extends TenantBaseController
         $this->view->pick('dashboard/settings/job-levels');
     }
 
-    public function jobLevelsCreateAction()
+    private function retiredJobLevelsCreateAction()
     {
         $this->view->setVar('title', $this->locale->t('settings.job_levels.new.title'));
         $this->view->setVar('mode', 'create');
         $this->view->pick('dashboard/settings/job-levels-action');
     }
 
-    public function jobLevelsStoreAction()
+    private function retiredJobLevelsStoreAction()
     {
         $code = strtoupper(trim($this->request->getPost('code', 'string', '')));
         $category = trim($this->request->getPost('category', 'string', ''));
@@ -785,7 +785,7 @@ class DashboardController extends TenantBaseController
         $this->response->redirect($this->tenantUrl('/dashboard/settings/job-levels'));
     }
 
-    public function jobLevelsEditAction()
+    private function retiredJobLevelsEditAction()
     {
         $id = (int)$this->dispatcher->getParam('id');
 
@@ -814,7 +814,7 @@ class DashboardController extends TenantBaseController
         $this->view->pick('dashboard/settings/job-levels-action');
     }
 
-    public function jobLevelsUpdateAction()
+    private function retiredJobLevelsUpdateAction()
     {
         $id = (int)$this->dispatcher->getParam('id');
         $code = strtoupper(trim($this->request->getPost('code', 'string', '')));
@@ -879,7 +879,7 @@ class DashboardController extends TenantBaseController
         $this->response->redirect($this->tenantUrl('/dashboard/settings/job-levels'));
     }
 
-    public function jobLevelsDeleteAction()
+    private function retiredJobLevelsDeleteAction()
     {
         $id = (int)$this->dispatcher->getParam('id');
 
@@ -1370,7 +1370,7 @@ class DashboardController extends TenantBaseController
     /**
      * Leave Policies
      */
-    public function leavePoliciesAction()
+    private function retiredLeavePoliciesAction()
     {
         $this->view->setVar('title', $this->locale->t('settings.leave_policies.title'));
 
@@ -1398,7 +1398,7 @@ class DashboardController extends TenantBaseController
         $this->view->pick('dashboard/settings/leave-policies');
     }
 
-    public function leavePoliciesCreateAction()
+    private function retiredLeavePoliciesCreateAction()
     {
         $translationService = new TranslationService($this->db);
         $installedLanguages = $translationService->getInstalledLanguages($this->currentCompanyId);
@@ -1410,7 +1410,7 @@ class DashboardController extends TenantBaseController
         $this->view->pick('dashboard/settings/leave-policies-action');
     }
 
-    public function leavePoliciesStoreAction()
+    private function retiredLeavePoliciesStoreAction()
     {
         $name = trim($this->request->getPost('name', 'string', ''));
         $defaultAllowanceMinutes = (int)$this->request->getPost('default_allowance_minutes', 'int', 0);
@@ -1474,7 +1474,7 @@ class DashboardController extends TenantBaseController
         $this->response->redirect($this->tenantUrl('/dashboard/settings/leave-policies'));
     }
 
-    public function leavePoliciesEditAction()
+    private function retiredLeavePoliciesEditAction()
     {
         $publicId = $this->dispatcher->getParam('id');
         $leaveType = $this->db->fetchOne(
@@ -1545,7 +1545,7 @@ class DashboardController extends TenantBaseController
         $this->view->pick('dashboard/settings/leave-policies-action');
     }
 
-    public function leavePoliciesUpdateAction()
+    private function retiredLeavePoliciesUpdateAction()
     {
         $publicId = $this->dispatcher->getParam('id');
         $name = trim($this->request->getPost('name', 'string', ''));
@@ -1607,7 +1607,7 @@ class DashboardController extends TenantBaseController
         $this->response->redirect($this->tenantUrl('/dashboard/settings/leave-policies'));
     }
 
-    public function leavePoliciesDeleteAction()
+    private function retiredLeavePoliciesDeleteAction()
     {
         $publicId = $this->dispatcher->getParam('id');
 
@@ -1670,7 +1670,7 @@ class DashboardController extends TenantBaseController
      * can toggle a policy's year-end behaviour between "carry_forward" and
      * "reset" without opening the full edit form. Returns JSON.
      */
-    public function leavePoliciesYearEndModeUpdateAction()
+    private function retiredLeavePoliciesYearEndModeUpdateAction()
     {
         if (!$this->isSuperAdmin()) {
             $this->response->setStatusCode(403, 'Forbidden');
@@ -1730,7 +1730,7 @@ class DashboardController extends TenantBaseController
     /**
      * POST /dashboard/settings/leave-policies/{id}/rules/store
      */
-    public function leaveAllowanceRulesStoreAction()
+    private function retiredLeaveAllowanceRulesStoreAction()
     {
         $publicId = $this->dispatcher->getParam('id');
 
@@ -1807,7 +1807,7 @@ class DashboardController extends TenantBaseController
     /**
      * POST /dashboard/settings/leave-policies/{id}/rules/update/{ruleId}
      */
-    public function leaveAllowanceRulesUpdateAction()
+    private function retiredLeaveAllowanceRulesUpdateAction()
     {
         $publicId = $this->dispatcher->getParam('id');
         $rulePublicId = $this->dispatcher->getParam('ruleId');
@@ -1884,7 +1884,7 @@ class DashboardController extends TenantBaseController
     /**
      * POST /dashboard/settings/leave-policies/{id}/rules/delete/{ruleId}
      */
-    public function leaveAllowanceRulesDeleteAction()
+    private function retiredLeaveAllowanceRulesDeleteAction()
     {
         $publicId = $this->dispatcher->getParam('id');
         $rulePublicId = $this->dispatcher->getParam('ruleId');
@@ -1919,7 +1919,7 @@ class DashboardController extends TenantBaseController
      * current allowance rules. Only updates balances that don't have any
      * used_minutes (to avoid overwriting balances that are in use).
      */
-    public function leaveAllowanceRulesRecalculateAction()
+    private function retiredLeaveAllowanceRulesRecalculateAction()
     {
         $publicId = $this->dispatcher->getParam('id');
 
