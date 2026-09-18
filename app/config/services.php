@@ -444,7 +444,7 @@ $di->setShared('adapterEncryption', function () {
 });
 
 $di->setShared('adapterConnections', function () {
-    return new AdapterConnectionService($this->getDI()->get('adapterEncryption'));
+    return new AdapterConnectionService($this->get('adapterEncryption'));
 });
 
 $di->setShared('transformer', function () {

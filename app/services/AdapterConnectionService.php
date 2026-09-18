@@ -2,9 +2,6 @@
 
 declare(strict_types=1);
 
-use PDO;
-use PDOException;
-
 class AdapterConnectionService
 {
     private const SQL_ENGINES = ['mysql', 'mariadb', 'pgsql'];
