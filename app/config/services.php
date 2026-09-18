@@ -434,6 +434,23 @@ $di->setShared('emailService', function () {
     return $emailService;
 });
 
+$di->setShared('adapterEncryption', function () {
+    $config = $this->getConfig();
+    $key = (string)$config->path('adapter.credentialsKey', '');
+    if ($key === '' || $key === 'change-this-adapter-key') {
+        throw new RuntimeException('ADAPTER_CREDENTIALS_KEY must be configured before using the adapter.');
+    }
+    return new CredentialEncryption($key);
+});
+
+$di->setShared('adapterConnections', function () {
+    return new AdapterConnectionService($this->getDI()->get('adapterEncryption'));
+});
+
+$di->setShared('transformer', function () {
+    return new TransformerService();
+});
+
 
 if (!function_exists('format_minutes')) {
     function format_minutes($totalMinutes)

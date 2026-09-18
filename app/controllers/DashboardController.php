@@ -68,66 +68,6 @@ class DashboardController extends TenantBaseController
         );
     }
 
-    public function indexAction()
-    {
-        $this->view->setVar('title', $this->locale->t('dashboard.title'));
-
-        $user = $this->session->get('auth');
-        $resolver = new TenantResolver($this->db);
-        $companies = $resolver->findCompaniesForUser((int) $user['id'], true);
-
-        $companyIds = array_column($companies, 'id');
-        $employeeCounts = [];
-        $positionCounts = [];
-        $totalEmployees = 0;
-
-        if (!empty($companyIds)) {
-            $placeholders = implode(',', array_fill(0, count($companyIds), '?'));
-
-            $employeeRows = $this->db->fetchAll(
-                "SELECT company_id, COUNT(*) as cnt FROM employees WHERE company_id IN (" . $placeholders . ") GROUP BY company_id",
-                Phalcon\Db\Enum::FETCH_ASSOC,
-                $companyIds
-            );
-            foreach ($employeeRows as $row) {
-                $count = (int)$row['cnt'];
-                $employeeCounts[(int)$row['company_id']] = $count;
-                $totalEmployees += $count;
-            }
-
-            $positionRows = $this->db->fetchAll(
-                "SELECT company_id, COUNT(*) as cnt FROM positions WHERE company_id IN (" . $placeholders . ") GROUP BY company_id",
-                Phalcon\Db\Enum::FETCH_ASSOC,
-                $companyIds
-            );
-            foreach ($positionRows as $row) {
-                $positionCounts[(int)$row['company_id']] = (int)$row['cnt'];
-            }
-        }
-
-        $totalCompanies = count($companies);
-        $averageEmployees = $totalCompanies > 0 ? number_format($totalEmployees / $totalCompanies, 1) : '0.0';
-
-        $chartPayload = [];
-        foreach ($companies as $company) {
-            $companyId = (int)$company['id'];
-            $chartPayload[] = [
-                'id' => $companyId,
-                'name' => $company['name'],
-                'employees' => $employeeCounts[$companyId] ?? 0
-            ];
-        }
-        $chartPayloadJson = htmlspecialchars(json_encode($chartPayload), ENT_QUOTES, 'UTF-8');
-
-        $this->view->setVar('companies', $companies);
-        $this->view->setVar('employeeCounts', $employeeCounts);
-        $this->view->setVar('positionCounts', $positionCounts);
-        $this->view->setVar('totalCompanies', $totalCompanies);
-        $this->view->setVar('totalEmployees', $totalEmployees);
-        $this->view->setVar('averageEmployees', $averageEmployees);
-        $this->view->setVar('chartPayloadJson', $chartPayloadJson);
-    }
-
     public function companiesDashboardAction()
     {
         $this->view->setVar('title', $this->locale->t('dashboard.company_dashboard.title'));

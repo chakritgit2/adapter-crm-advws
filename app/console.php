@@ -37,6 +37,22 @@ $di->setShared('db', function () {
     return new $class($params);
 });
 
+$di->setShared('adapterEncryption', function () {
+    $config = $this->getConfig();
+    $key = (string)$config->path('adapter.credentialsKey', '');
+    if ($key === '' || $key === 'change-this-adapter-key') {
+        throw new RuntimeException('ADAPTER_CREDENTIALS_KEY must be configured before using the adapter.');
+    }
+    return new CredentialEncryption($key);
+});
+
+$di->setShared('adapterConnections', function () {
+    return new AdapterConnectionService($this->getDI()->get('adapterEncryption'));
+});
+
+$di->setShared('transformer', function () {
+    return new TransformerService();
+});
 
 
 // Register the tasks directory

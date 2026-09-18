@@ -1,0 +1,15 @@
+{% extends 'layouts/admin.volt' %}
+
+{% block content %}
+<div class="container mx-auto px-4 lg:px-8 py-8 max-w-3xl">
+    <h1 class="text-2xl font-bold text-slate-900 mb-6">{{ connection ? 'Edit' : 'Add' }} external connection</h1>
+    <form method="post" action="{{ adapterBaseUrl }}/connections/{{ connection ? 'update/' ~ connection['id'] : 'store' }}" class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-5">
+        <input type="hidden" name="csrf_token" value="{{ adapterCsrf }}">
+        <div><label class="block text-sm font-medium text-slate-700 mb-1">Name</label><input required name="name" value="{{ connection['name']|default('') }}" class="w-full rounded-lg border-slate-300" maxlength="120"></div>
+        <div class="grid md:grid-cols-2 gap-5"><div><label class="block text-sm font-medium text-slate-700 mb-1">Engine</label><select name="engine" class="w-full rounded-lg border-slate-300"><option value="mysql" {{ connection and connection['engine'] == 'mysql' ? 'selected' : '' }}>MySQL</option><option value="mariadb" {{ connection and connection['engine'] == 'mariadb' ? 'selected' : '' }}>MariaDB</option><option value="pgsql" {{ connection and connection['engine'] == 'pgsql' ? 'selected' : '' }}>PostgreSQL</option><option value="mongodb" {{ connection and connection['engine'] == 'mongodb' ? 'selected' : '' }}>MongoDB</option></select></div><div><label class="block text-sm font-medium text-slate-700 mb-1">Port</label><input type="number" name="port" value="{{ connection['port']|default('') }}" class="w-full rounded-lg border-slate-300"></div></div>
+        <div class="grid md:grid-cols-2 gap-5"><div><label class="block text-sm font-medium text-slate-700 mb-1">Host</label><input required name="host" value="{{ connection['host']|default('') }}" class="w-full rounded-lg border-slate-300"></div><div><label class="block text-sm font-medium text-slate-700 mb-1">Database</label><input required name="db_name" value="{{ connection['db_name']|default('') }}" class="w-full rounded-lg border-slate-300"></div></div>
+        <div class="grid md:grid-cols-2 gap-5"><div><label class="block text-sm font-medium text-slate-700 mb-1">Username</label><input name="username" value="{{ connection['username']|default('') }}" class="w-full rounded-lg border-slate-300"></div><div><label class="block text-sm font-medium text-slate-700 mb-1">Password</label><input type="password" name="password" class="w-full rounded-lg border-slate-300" autocomplete="new-password"><p class="text-xs text-slate-500 mt-1">Leave blank when editing to retain the existing secret.</p></div></div>
+        <div class="flex justify-end gap-3"><a href="{{ adapterBaseUrl }}" class="px-4 py-2 text-slate-600">Cancel</a><button class="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700">Save connection</button></div>
+    </form>
+</div>
+{% endblock %}

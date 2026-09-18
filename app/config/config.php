@@ -77,6 +77,14 @@ return new \Phalcon\Config\Config([
     'clarityOn' => false,
     'clarityKey' => '',
 
+    // UDA / external adapter
+    'adapter' => [
+        // Override this in deployment configuration; do not use the fallback in production.
+        'credentialsKey' => getenv('ADAPTER_CREDENTIALS_KEY') ?: 'change-this-adapter-key',
+        'maxRows' => 1000,
+        'requestTimeout' => 10,
+    ],
+
     // Localization — Polymorphic Translation Ledger
     'localization' => [
         'allowed_targets' => [

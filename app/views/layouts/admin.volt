@@ -210,6 +210,12 @@
                             {{ t('nav.help_center') }}
                         </a>
                     </li>
+                    <li>
+                        <a href="/{{ currentTenantSlug ? currentTenantSlug ~ '/' : '' }}{{ navCompanySlug ? navCompanySlug ~ '/' : '' }}adapter" class="flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-700 rounded-lg hover:bg-slate-100 notosan">
+                            <i class="fas fa-plug w-5 text-center text-slate-500"></i>
+                            Data Adapter
+                        </a>
+                    </li>
                     {% endif %}
                 </ul>
             </nav>

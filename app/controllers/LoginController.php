@@ -96,15 +96,7 @@ class LoginController extends Controller
                 return $this->response->redirect('/dashboard/change-password');
             }
 
-            $resolver = new TenantResolver($this->db);
-
-            // Redirect to the user's default tenant dashboard: /{tenant_slug}
-            $tenant = $resolver->findDefaultTenantForUser((int) $user['id']);
-            if ($tenant && !empty($tenant['slug'])) {
-                return $this->response->redirect('/' . $tenant['slug']);
-            }
-            $this->flashSession->error($this->locale->t('auth.no_tenant'));
-            return $this->response->redirect($this->config['loginPath']);
+            return $this->response->redirect('/dashboard');
         }
 
         $this->flashSession->error($this->locale->t('auth.invalid_credentials'));

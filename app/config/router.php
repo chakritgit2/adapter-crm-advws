@@ -331,22 +331,6 @@ $tenantGroup->addGet('/dashboard/reports', [
     'controller' => 'hr-reports',
     'action' => 'index'
 ]);
-$tenantGroup->addGet('/dashboard/reports/workforce', [
-    'controller' => 'hr-reports',
-    'action' => 'workforce'
-]);
-$tenantGroup->addGet('/dashboard/reports/leave', [
-    'controller' => 'hr-reports',
-    'action' => 'leave'
-]);
-$tenantGroup->addGet('/dashboard/reports/overtime', [
-    'controller' => 'hr-reports',
-    'action' => 'overtime'
-]);
-$tenantGroup->addGet('/dashboard/reports/turnover', [
-    'controller' => 'hr-reports',
-    'action' => 'turnover'
-]);
 
 $router->mount($tenantGroup);
 
@@ -375,9 +359,10 @@ $router->addGet('/', [
 ]);
 
 // Companies routes (global, no tenant slug required)
+// /dashboard lands on the global companies page (post-login target)
 $router->addGet('/dashboard', [
-    'controller' => 'dashboard',
-    'action' => 'index'
+    'controller' => 'index',
+    'action' => 'companies'
 ]);
 $router->addGet('/dashboard/companies', [
     'controller' => 'index',
@@ -445,6 +430,30 @@ $router->addGet('/reporting{params:.*}', [
     'controller' => 'index',
     'action' => 'legacyRedirect'
 ]);
+
+// UDA passive API. This route is registered after the generic /api legacy
+// redirect so Phalcon's reverse matching gives the specific route priority.
+$router->addGet('/api/v1/{api_name:[a-zA-Z0-9_-]+}', [
+    'controller' => 'adapter-api',
+    'action' => 'fetch'
+]);
+
+// Adapter administration (tenant/company scoped and Super Admin only).
+$adapterGroup = new RouterGroup([
+    'controller' => 'adapter',
+]);
+$adapterGroup->setPrefix('/{tenant_slug:' . $tenantSlugPattern . '}/{company_slug:' . $tenantSlugPattern . '}/adapter');
+$adapterGroup->addGet('', ['action' => 'index']);
+$adapterGroup->addGet('/connections/create', ['action' => 'connectionCreate']);
+$adapterGroup->addPost('/connections/store', ['action' => 'connectionStore']);
+$adapterGroup->addGet('/connections/edit/{id:[0-9]+}', ['action' => 'connectionEdit']);
+$adapterGroup->addPost('/connections/update/{id:[0-9]+}', ['action' => 'connectionUpdate']);
+$adapterGroup->addPost('/connections/test/{id:[0-9]+}', ['action' => 'connectionTest']);
+$adapterGroup->addPost('/connections/delete/{id:[0-9]+}', ['action' => 'connectionDelete']);
+$adapterGroup->addGet('/endpoints/create', ['action' => 'endpointCreate']);
+$adapterGroup->addPost('/endpoints/store', ['action' => 'endpointStore']);
+$adapterGroup->addPost('/endpoints/delete/{id:[0-9]+}', ['action' => 'endpointDelete']);
+$router->mount($adapterGroup);
 
 // Auth routes (login / set-password / logout)
 $router->add($config['loginPath'], [
