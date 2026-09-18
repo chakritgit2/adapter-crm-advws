@@ -11,9 +11,9 @@ return new \Phalcon\Config\Config([
     'database' => [
         'adapter'     => 'Mysql',
         'host'        => 'mariadb.cdi-advws',
-        'username'    => 'hr',
-        'password'    => '[b1dx[MkpKn!NcR/',
-        'dbname'      => 'hr',
+        'username'    => 'adapter-crm',
+        'password'    => 'QxocsiRRJfnWN7hy',
+        'dbname'      => 'adapter-crm',
         'charset'     => 'utf8',
     ],
     'application' => [
@@ -34,12 +34,12 @@ return new \Phalcon\Config\Config([
     ],
     
     // App Name
-    'appName' => 'HR',
-    'appPublicName' => 'ฝ่ายบุคลากร บริษัท Advance Web Service จำกัด (มหาชน)',
-    'appDescription' => 'ฝ่ายบุคลากร บริษัท Advance Web Service จำกัด (มหาชน)',
+    'appName' => 'Adapter CRM',
+    'appPublicName' => 'Adapter CRM',
+    'appDescription' => 'Adapter CRM',
     
     // Login Path
-    'loginPath' => '/loginhrm',
+    'loginPath' => '/login',
     
 
     // Site API Credentials Encryption

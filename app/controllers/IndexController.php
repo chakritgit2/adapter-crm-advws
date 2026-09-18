@@ -23,10 +23,7 @@ class IndexController extends Controller
      * @var ViewManager
      */
     protected $view;
-    /**
-     * @var AuthService
-     */
-    // protected $auth;
+    // Authentication is handled by the active admin_users session flow.
 
     /**
      * @var ErrorService
@@ -661,7 +658,7 @@ class IndexController extends Controller
         // Update password
         $encryptedNew = LoginController::encryptPass($newPassword);
         $success = $this->db->execute(
-            "UPDATE users SET password_hash = :password WHERE id = :id",
+            "UPDATE admin_users SET password_hash = :password WHERE id = :id",
             [
                 'password' => $encryptedNew,
                 'id' => $auth['id']

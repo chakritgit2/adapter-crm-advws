@@ -1,5 +1,9 @@
--- UDA adapter storage for tenant-scoped external connections and API slots.
--- Apply after the tenant_system migration.
+-- Current-codebase reconciliation migration.
+--
+-- Baseline: resource/mdSource/--Database-Schema.md
+-- This migration is additive and restores the UDA tables required by the
+-- current AdapterController, AdapterApiController, and SyncTask code.
+-- Apply tenant_system/base schema first so tenants and companies exist.
 
 CREATE TABLE IF NOT EXISTS adapter_connections (
     id INT NOT NULL AUTO_INCREMENT,

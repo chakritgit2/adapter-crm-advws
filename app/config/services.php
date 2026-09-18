@@ -51,15 +51,6 @@ $di->setShared('session', function () {
 });
 
 /**
- * AUTH Service
- */
-// $di->setShared('auth', function () {
-//     $auth = new AuthService($this);
-//     return $auth;
-// });
-
-
-/**
  * Middleware
  */
 /**

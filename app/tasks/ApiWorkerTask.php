@@ -275,11 +275,7 @@ class ApiWorkerTask extends Task
             [$alertId]
         );
 
-        // 2. Fetch the notification preferences of Admins/Agency Marketers
-        $sql = "SELECT email, notify_slack_webhook FROM users WHERE notify_email = 1 OR notify_slack_webhook IS NOT NULL";
-        $usersToNotify = $this->db->fetchAll($sql, \Phalcon\Db\Enum::FETCH_ASSOC);
-
-        // 3. Immediately notify the team for manual intervention
+        // 2. Immediately notify the team for manual intervention
         $message = "⚠️ URGENT: Google Ads API Execution Failed.\n";
         $message .= "Table: {$table} | Alert ID: {$alertId}\n";
         $message .= "Reason: {$errorMessage}\n";
