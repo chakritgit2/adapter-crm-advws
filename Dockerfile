@@ -38,8 +38,11 @@ RUN apt-get update && apt-get install -y \
     unzip \
     openssh-server \
     && docker-php-ext-install pdo_mysql pdo_pgsql dom bcmath \
-    && pecl install mongodb \
+    && pecl channel-update pecl.php.net \
+    && curl -sSLo /tmp/mongodb.tgz https://pecl.php.net/get/mongodb \
+    && pecl install /tmp/mongodb.tgz \
     && docker-php-ext-enable mongodb \
+    && rm /tmp/mongodb.tgz \
     && curl -sSLo /tmp/amqp.tgz https://pecl.php.net/get/amqp \
     && pecl install /tmp/amqp.tgz \
     && docker-php-ext-enable amqp \
