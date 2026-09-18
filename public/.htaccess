@@ -1,0 +1,36 @@
+AddDefaultCharset UTF-8
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    RewriteCond %{HTTP:Authorization} ^(.*)
+    RewriteRule .* - [e=HTTP_AUTHORIZATION:%1]
+
+    # Serve static assets directly (CSS, JS, images, fonts)
+    RewriteCond %{REQUEST_URI} \.(css|js|png|jpe?g|gif|svg|webp|ico|woff2?|ttf|eot|pdf|zip)$ [NC]
+    RewriteRule .* - [L]
+
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^(.*)$ index.php?_url=/$1 [QSA,L]
+</IfModule>
+
+<IfModule mod_expires.c>
+    ExpiresActive On
+
+    # Set cache expiration for specific static asset types
+    ExpiresByType image/gif "access plus 1 year"
+    ExpiresByType image/webp "access plus 1 year"
+    ExpiresByType text/css "access plus 6 month"
+</IfModule>
+
+<IfModule mod_headers.c>
+    # Enable caching via Cache-Control headers
+    <FilesMatch "\.(gif|webp)$">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </FilesMatch>
+
+    <FilesMatch "\.css$">
+        Header set Cache-Control "public, max-age=2592000, immutable"
+    </FilesMatch>
+</IfModule>

@@ -1,0 +1,96 @@
+<div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+    <!-- Header -->
+    <div
+        style="background-color: #ffffff; padding: 24px; border-radius: 12px 12px 0 0; border: 1px solid #e2e8f0; border-bottom: none; text-align: center;">
+        <div style="margin-bottom: 20px;">
+            <img src="https://hr.advws.com/img/logo.png" alt="{brand_name} Logo" style="max-height: 60px;">
+        </div>
+        <h1 style="color: #0f172a; font-size: 24px; font-weight: bold; margin: 0;">
+            You're Invited / คำเชิญเข้าใช้งาน
+        </h1>
+    </div>
+
+    <!-- Main Content -->
+    <div
+        style="background-color: #ffffff; padding: 24px; border: 1px solid #e2e8f0; border-top: none; border-bottom: none;">
+        <!-- Greeting -->
+        <div style="margin-bottom: 24px;">
+            <p style="margin: 0 0 8px 0; color: #0f172a; font-size: 18px; font-weight: bold;">
+                Hi {name}, / สวัสดี {name}
+            </p>
+            <p style="margin: 0; color: #64748b;">
+                {invited_by} has invited you to join {brand_name} as a <strong>{role}</strong>.<br>
+                {invited_by} ได้เชิญคุณเข้าร่วมใช้งาน {brand_name} ในบทบาท <strong>{role}</strong>
+            </p>
+        </div>
+
+        <!-- Role Info -->
+        <div style="background-color: #f1f5f9; padding: 16px; border-radius: 8px; margin-bottom: 24px;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <td style="padding: 8px 0; color: #64748b; width: 40%;">Name / ชื่อ:</td>
+                    <td style="padding: 8px 0; font-weight: 500; color: #334155;">{name}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px 0; color: #64748b;">Role / บทบาท:</td>
+                    <td style="padding: 8px 0; font-weight: 500; color: #334155;">{role}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px 0; color: #64748b;">Invited by / เชิญโดย:</td>
+                    <td style="padding: 8px 0; font-weight: 500; color: #334155;">{invited_by}</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Instructions -->
+        <div style="margin-bottom: 24px;">
+            <p style="margin: 0 0 12px 0; color: #64748b;">
+                Click the button below to set your password and access your account.<br>
+                กดปุ่มด้านล่างเพื่อตั้งรหัสผ่านและเข้าใช้งานบัญชีของคุณ
+            </p>
+        </div>
+
+        <!-- Call to Action -->
+        <div style="text-align: center; margin-bottom: 24px;">
+            <a href="{reset_url}"
+                style="display: inline-block; background-color: #2563eb; color: #ffffff; text-decoration: none; padding: 14px 28px; border-radius: 6px; font-weight: 500; font-size: 16px;">
+                Set Your Password / ตั้งรหัสผ่าน
+            </a>
+        </div>
+
+        <!-- Link Fallback -->
+        <div style="margin-bottom: 24px; word-break: break-all;">
+            <p style="margin: 0 0 8px 0; color: #64748b; font-size: 14px;">
+                If the button doesn't work, copy and paste this link into your browser:<br>
+                หากปุ่มไม่ทำงาน ให้คัดลอกลิงก์นี้แล้ววางในเบราว์เซอร์:
+            </p>
+            <a href="{reset_url}" style="color: #2563eb; text-decoration: none; font-size: 14px;">{reset_url}</a>
+        </div>
+
+        <!-- Expiry Note -->
+        <div
+            style="background-color: #fffbeb; border-left: 4px solid #f59e0b; padding: 12px 16px; border-radius: 0 8px 8px 0; margin-bottom: 24px;">
+            <p style="margin: 0; color: #92400e; font-size: 14px;">
+                This link expires in {expiry_hours} hours.<br>
+                ลิงก์นี้จะหมดอายุใน {expiry_hours} ชั่วโมง
+            </p>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div
+        style="background-color: #ffffff; padding: 24px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 12px 12px; text-align: center;">
+        <p style="margin: 0 0 8px 0; color: #64748b; font-size: 14px;">
+            Need help? Contact support / ต้องการความช่วยเหลือ ติดต่อฝ่ายสนับสนุน
+        </p>
+        <a href="mailto:hr@advws.com"
+            style="color: #2563eb; text-decoration: none; font-weight: 500; font-size: 14px;">hr@advws.com</a>
+
+        <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #e2e8f0;">
+            <p style="margin: 0; color: #94a3b8; font-size: 12px;">
+                This is an automated email from {brand_name}. Please do not reply to this message.<br>
+                อีเมลนี้ส่งโดยระบบอัตโนมัติจาก {brand_name} กรุณาอยาตอบกลับ
+            </p>
+        </div>
+    </div>
+</div>

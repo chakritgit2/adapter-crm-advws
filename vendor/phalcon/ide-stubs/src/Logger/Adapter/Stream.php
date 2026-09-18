@@ -1,0 +1,124 @@
+<?php
+
+/* This file is part of the Phalcon Framework.
+ *
+ * (c) Phalcon Team <team@phalcon.io>
+ *
+ * For the full copyright and license information, please view the LICENSE.txt
+ * file that was distributed with this source code.
+ */
+namespace Phalcon\Logger\Adapter;
+
+use Phalcon\Logger\Adapter\Exceptions\FileOpenFailed;
+use Phalcon\Logger\Adapter\Exceptions\InvalidStreamMode;
+use Phalcon\Logger\Item;
+
+/**
+ * Phalcon\Logger\Adapter\Stream
+ *
+ * Adapter to store logs in plain text files
+ *
+ * ```php
+ * $logger = new \Phalcon\Logger\Adapter\Stream('app/logs/test.log');
+ *
+ * $logger->log('This is a message');
+ * $logger->log(\Phalcon\Logger\Enum::ERROR, 'This is an error');
+ * $logger->error('This is another error');
+ *
+ * $logger->close();
+ * ```
+ *
+ * @property resource|null $handler
+ * @property string        $mode
+ * @property string        $name
+ */
+class Stream extends \Phalcon\Logger\Adapter\AbstractAdapter
+{
+    /**
+     * Stream handler resource
+     *
+     * @var resource|null
+     */
+    protected $handler = null;
+
+    /**
+     * The file open mode. Defaults to 'ab'
+     *
+     * @var string
+     */
+    protected $mode = 'ab';
+
+    /**
+     * Stream name
+     *
+     * @var string
+     */
+    protected $name;
+
+    /**
+     * Stream constructor.
+     *
+     * @param string $name
+     * @param array  $options
+     *
+     * @throws InvalidStreamMode
+     */
+    public function __construct(string $name, array $options = [])
+    {
+    }
+
+    /**
+     * Closes the stream
+     *
+     * @return bool
+     */
+    public function close(): bool
+    {
+    }
+
+    /**
+     * Stream name
+     *
+     * @return string
+     */
+    public function getName(): string
+    {
+    }
+
+    /**
+     * Processes the message i.e. writes it to the file
+     *
+     * @param Item $item
+     * @return void
+     */
+    public function process(\Phalcon\Logger\Item $item): void
+    {
+    }
+
+    /**
+     * @todo to be removed when we get traits
+     * @param mixed $handle
+     * @return bool
+     */
+    protected function phpFclose($handle): bool
+    {
+    }
+
+    /**
+     * @todo to be removed when we get traits
+     * @param string $filename
+     * @param string $mode
+     */
+    protected function phpFopen(string $filename, string $mode)
+    {
+    }
+
+    /**
+     * @todo to be removed when we get traits
+     * @param mixed $handle
+     * @param string $message
+     */
+    protected function phpFwrite($handle, string $message)
+    {
+    }
+}

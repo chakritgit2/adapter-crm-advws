@@ -1,0 +1,17 @@
+{
+    "require": {
+        "phalcon/zephir": "dev-development"
+    },
+    "require-dev": {
+        "phalcon/ide-stubs": "^5.14"
+    },
+    "autoload": {
+        "classmap": [
+            "app/models/",
+            "app/controllers/",
+            "app/helpers/",
+            "app/services/",
+            "app/traits/"
+        ]
+    }
+}

@@ -1,0 +1,354 @@
+<?php
+
+/* This file is part of the Phalcon Framework.
+ *
+ * (c) Phalcon Team <team@phalcon.io>
+ *
+ * For the full copyright and license information, please view the LICENSE.txt
+ * file that was distributed with this source code.
+ */
+namespace Phalcon\Filter;
+
+use Phalcon\Filter\Exceptions\FilterNotRegistered;
+
+/**
+ * Lazy loads, stores and exposes sanitizer objects
+ *
+ * @method int          absint(mixed $input)
+ * @method string       alnum(mixed $input)
+ * @method string       alpha(mixed $input)
+ * @method bool         bool(mixed $input)
+ * @method string       email(string $input)
+ * @method float        float(mixed $input)
+ * @method int          int(string $input)
+ * @method string|false ip(string $input, int $filter = FILTER_FLAG_NONE)
+ * @method string       lower(string $input)
+ * @method string       lowerfirst(string $input)
+ * @method mixed        regex(mixed $input, mixed $pattern, mixed $replace)
+ * @method mixed        remove(mixed $input, mixed $replace)
+ * @method mixed        replace(mixed $input, mixed $source, mixed $target)
+ * @method string       special(string $input)
+ * @method string       specialfull(string $input)
+ * @method string       string(string $input)
+ * @method string       stringlegacy(mixed $input)
+ * @method string       striptags(string $input)
+ * @method string       trim(string $input)
+ * @method string       upper(string $input)
+ * @method string       upperFirst(string $input)
+ * @method string|null  upperWords(string $input)
+ * @method string|null  url(string $input)
+ *
+ * @property array $mapper
+ * @property array $services
+ */
+class Filter implements \Phalcon\Filter\FilterInterface
+{
+    /**
+     * @var string
+     */
+    const string FILTER_ABSINT = 'absint';
+
+    /**
+     * @var string
+     */
+    const string FILTER_ALNUM = 'alnum';
+
+    /**
+     * @var string
+     */
+    const string FILTER_ALPHA = 'alpha';
+
+    /**
+     * @var string
+     */
+    const string FILTER_BOOL = 'bool';
+
+    /**
+     * @var string
+     */
+    const string FILTER_EMAIL = 'email';
+
+    /**
+     * @var string
+     */
+    const string FILTER_FLOAT = 'float';
+
+    /**
+     * @var string
+     */
+    const string FILTER_INT = 'int';
+
+    /**
+     * @var string
+     */
+    const string FILTER_IP = 'ip';
+
+    /**
+     * @var string
+     */
+    const string FILTER_LOWER = 'lower';
+
+    /**
+     * @var string
+     */
+    const string FILTER_LOWERFIRST = 'lowerfirst';
+
+    /**
+     * @var string
+     */
+    const string FILTER_REGEX = 'regex';
+
+    /**
+     * @var string
+     */
+    const string FILTER_REMOVE = 'remove';
+
+    /**
+     * @var string
+     */
+    const string FILTER_REPLACE = 'replace';
+
+    /**
+     * @var string
+     */
+    const string FILTER_SPECIAL = 'special';
+
+    /**
+     * @var string
+     */
+    const string FILTER_SPECIALFULL = 'specialfull';
+
+    /**
+     * @var string
+     */
+    const string FILTER_STRING = 'string';
+
+    /**
+     * @var string
+     */
+    const string FILTER_STRING_LEGACY = 'stringlegacy';
+
+    /**
+     * @var string
+     */
+    const string FILTER_STRIPTAGS = 'striptags';
+
+    /**
+     * @var string
+     */
+    const string FILTER_TRIM = 'trim';
+
+    /**
+     * @var string
+     */
+    const string FILTER_UPPER = 'upper';
+
+    /**
+     * @var string
+     */
+    const string FILTER_UPPERFIRST = 'upperfirst';
+
+    /**
+     * @var string
+     */
+    const string FILTER_UPPERWORDS = 'upperwords';
+
+    /**
+     * @var string
+     */
+    const string FILTER_URL = 'url';
+
+    /**
+     * @var array
+     */
+    protected $mapper = [];
+
+    /**
+     * @var array
+     */
+    protected $services = [];
+
+    /**
+     * Filter constructor.
+     *
+     * @param array $mapper
+     */
+    public function __construct(array $mapper = [])
+    {
+    }
+
+    /**
+     * Magic call to make the helper objects available as methods.
+     *
+     * @param string $name
+     * @param array  $args
+     *
+     * @return mixed
+     * @throws Exception
+     */
+    public function __call(string $name, array $args)
+    {
+    }
+
+    /**
+     * Get a service. If it is not in the mapper array, create a new object,
+     * set it and then return it.
+     *
+     * @param string $name
+     *
+     * @return mixed
+     * @throws Exception
+     */
+    public function get(string $name): mixed
+    {
+    }
+
+    /**
+     * Returns the default sanitizer name to class map. This is the single
+     * source for the built-in sanitizer registry: when adding a sanitizer,
+     * add its `FILTER_` constant and its entry here.
+     *
+     * @return string[]
+     */
+    public static function getDefaultMapper(): array
+    {
+    }
+
+    /**
+     * Checks if a service exists in the map array
+     *
+     * @param string $name
+     *
+     * @return bool
+     */
+    public function has(string $name): bool
+    {
+    }
+
+    /**
+     * Sanitizes a value with a specified single or set of sanitizers
+     *
+     * Array policy: when `$value` is an array and `$noRecursive` is `false`
+     * (the default), each element is passed to the sanitizer individually
+     * and an array is returned - recursion is one level deep only. Elements
+     * that are themselves arrays are passed to the sanitizer as-is, which
+     * raises a `TypeError` for sanitizers that type their value parameter
+     * (e.g. `trim`). When `$noRecursive` is `true`, the whole array is
+     * passed to the sanitizer as a single value.
+     *
+     * @param mixed $value
+     * @param mixed $sanitizers
+     * @param bool  $noRecursive
+     *
+     * @return array|false|mixed|null
+     * @throws Exception
+     */
+    public function sanitize($value, $sanitizers, bool $noRecursive = false): mixed
+    {
+    }
+
+    /**
+     * Set a new service to the mapper array
+     *
+     * @param string $name
+     * @param mixed  $service
+     * @return void
+     */
+    public function set(string $name, $service): void
+    {
+    }
+
+    /**
+     * Loads the objects in the internal mapper array
+     *
+     * @param array $mapper
+     * @return void
+     */
+    protected function init(array $mapper): void
+    {
+    }
+
+    /**
+     * @param mixed $definition
+     *
+     * @return mixed
+     */
+    private function createInstance($definition)
+    {
+    }
+
+    /**
+     * @param array $sanitizers
+     * @param mixed $value
+     * @param bool  $noRecursive
+     *
+     * @return array|false|mixed|null
+     * @throws Exception
+     */
+    private function processArraySanitizers(array $sanitizers, $value, bool $noRecursive)
+    {
+    }
+
+    /**
+     * Processes the array values with the relevant sanitizers
+     *
+     * @param array  $values
+     * @param string $sanitizerName
+     * @param array  $sanitizerParams
+     *
+     * @return array
+     * @throws Exception
+     */
+    private function processArrayValues(array $values, string $sanitizerName, array $sanitizerParams = []): array
+    {
+    }
+
+    /**
+     * Internal sanitize wrapper for recursion
+     *
+     * @param mixed  $value
+     * @param string $sanitizerName
+     * @param array  $sanitizerParams
+     *
+     * @return false|mixed
+     * @throws Exception
+     */
+    private function sanitizer($value, string $sanitizerName, array $sanitizerParams = [])
+    {
+    }
+
+    /**
+     * @param mixed  $value
+     * @param string $sanitizerName
+     * @param array  $sanitizerParams
+     * @param bool   $noRecursive
+     *
+     * @return array|mixed
+     * @throws Exception
+     */
+    private function processValueIsArray($value, string $sanitizerName, array $sanitizerParams, bool $noRecursive)
+    {
+    }
+
+    /**
+     * @param mixed  $value
+     * @param string $sanitizerName
+     * @param array  $sanitizerParams
+     *
+     * @return array|false|mixed
+     * @throws Exception
+     */
+    private function processValueIsNotArray($value, string $sanitizerName, array $sanitizerParams)
+    {
+    }
+
+    /**
+     * @param mixed $sanitizerKey
+     * @param mixed $sanitizer
+     *
+     * @return array
+     */
+    private function splitSanitizerParameters($sanitizerKey, $sanitizer): array
+    {
+    }
+}

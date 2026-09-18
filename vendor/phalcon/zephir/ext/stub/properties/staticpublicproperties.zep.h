@@ -1,0 +1,40 @@
+
+extern zend_class_entry *stub_properties_staticpublicproperties_ce;
+
+ZEPHIR_INIT_CLASS(Stub_Properties_StaticPublicProperties);
+
+PHP_METHOD(Stub_Properties_StaticPublicProperties, setSomeString);
+PHP_METHOD(Stub_Properties_StaticPublicProperties, testAddAndSub);
+PHP_METHOD(Stub_Properties_StaticPublicProperties, testAddAndSub2);
+PHP_METHOD(Stub_Properties_StaticPublicProperties, testAddAndSub3);
+PHP_METHOD(Stub_Properties_StaticPublicProperties, testAddAndSub4);
+PHP_METHOD(Stub_Properties_StaticPublicProperties, testAddAndSub5);
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_stub_properties_staticpublicproperties_setsomestring, 0, 0, 1)
+	ZEND_ARG_INFO(0, val)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_stub_properties_staticpublicproperties_testaddandsub, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_stub_properties_staticpublicproperties_testaddandsub2, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_stub_properties_staticpublicproperties_testaddandsub3, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_stub_properties_staticpublicproperties_testaddandsub4, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_stub_properties_staticpublicproperties_testaddandsub5, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
+ZEPHIR_INIT_FUNCS(stub_properties_staticpublicproperties_method_entry) {
+	PHP_ME(Stub_Properties_StaticPublicProperties, setSomeString, arginfo_stub_properties_staticpublicproperties_setsomestring, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
+PHP_ME(Stub_Properties_StaticPublicProperties, testAddAndSub, arginfo_stub_properties_staticpublicproperties_testaddandsub, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
+PHP_ME(Stub_Properties_StaticPublicProperties, testAddAndSub2, arginfo_stub_properties_staticpublicproperties_testaddandsub2, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
+PHP_ME(Stub_Properties_StaticPublicProperties, testAddAndSub3, arginfo_stub_properties_staticpublicproperties_testaddandsub3, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
+PHP_ME(Stub_Properties_StaticPublicProperties, testAddAndSub4, arginfo_stub_properties_staticpublicproperties_testaddandsub4, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
+PHP_ME(Stub_Properties_StaticPublicProperties, testAddAndSub5, arginfo_stub_properties_staticpublicproperties_testaddandsub5, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
+	PHP_FE_END
+};

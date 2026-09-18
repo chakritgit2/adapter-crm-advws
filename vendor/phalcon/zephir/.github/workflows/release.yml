@@ -1,0 +1,81 @@
+name: Upload Release Assets
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+
+    env:
+      BOX_VERSION: 4.2.0
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 5
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: intl, zip, zlib
+          coverage: none
+          ini-values: memory_limit=1G, phar.readonly=0
+
+      - name: Get Composer Cache Directory
+        id: composer-cache
+        run: echo ::set-output name=dir::$(composer config cache-files-dir)
+
+      - name: Setup Composer Cache
+        uses: actions/cache@v6
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
+
+      - name: Install Project Dependencies
+        run: composer install --prefer-dist --no-interaction --no-ansi --no-progress
+
+      - name: Install Box
+        run: |
+          wget \
+            "https://github.com/humbug/box/releases/download/${{ env.BOX_VERSION }}/box.phar" \
+            --quiet \
+            -O ./box
+
+          chmod +x ./box
+          sudo mv ./box /usr/local/bin
+
+      - name: Build Zephir PHAR
+        run: .ci/build-phar.sh
+
+      - name: Upload Zephir Phar
+        uses: actions/upload-artifact@v7
+        with:
+          name: zephir.phar
+          path: zephir.phar
+
+      - name: Get the release version
+        id: get-version
+        run: |
+          echo ::set-output name=version::${GITHUB_REF#refs/tags/}
+
+      - name: Prepare Release Notes
+        run: |
+          ./.ci/release-notes.sh ./CHANGELOG.md > ./release-notes.md
+
+      - name: Create Release
+        uses: ncipollo/release-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          name: ${{ steps.get-version.outputs.version }}
+          tag: ${{ steps.get-version.outputs.version }}
+          bodyFile: "./release-notes.md"
+          allowUpdates: true
+          artifacts: zephir.phar
+          artifactContentType: application/x-php

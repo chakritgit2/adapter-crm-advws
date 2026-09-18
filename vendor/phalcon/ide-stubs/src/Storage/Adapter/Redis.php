@@ -1,0 +1,229 @@
+<?php
+
+/* This file is part of the Phalcon Framework.
+ *
+ * (c) Phalcon Team <team@phalcon.io>
+ *
+ * For the full copyright and license information, please view the LICENSE.txt
+ * file that was distributed with this source code.
+ */
+namespace Phalcon\Storage\Adapter;
+
+use DateInterval;
+use Exception as BaseException;
+use Phalcon\Storage\Exception as StorageException;
+use Phalcon\Storage\Exceptions\AuthenticationFailed;
+use Phalcon\Storage\Exceptions\ConnectionFailed;
+use Phalcon\Storage\Exceptions\DatabaseSelectionFailed;
+use Phalcon\Storage\SerializerFactory;
+use Phalcon\Support\Exception as SupportException;
+
+/**
+ * Redis adapter
+ *
+ * Capabilities:
+ * - Counters: native atomic (incrBy()/decrBy()).
+ * - getKeys(): non-blocking SCAN iteration.
+ * - Serializers: Phalcon-side, or backend-native via OPT_SERIALIZER. Native
+ *   serializers change the bytes at rest and are not interchangeable with
+ *   Phalcon-side serializers.
+ *
+ * @property array $options
+ */
+class Redis extends \Phalcon\Storage\Adapter\AbstractAdapter
+{
+    /**
+     * @var string
+     */
+    protected $prefix = 'ph-reds-';
+
+    /**
+     * Redis constructor.
+     *
+     * @param SerializerFactory $factory
+     * @param array             $options = [
+     *     "host"           => "127.0.0.1",
+     *     "port"           => 6379,
+     *     "index"          => 0,
+     *     "timeout"        => 0,
+     *     "persistent"     => false,
+     *     "persistentId"   => "",
+     *     "auth"           => "",
+     *     "socket"         => "",
+     *     "connectTimeout" => 0,
+     *     "retryInterval"  => 0,
+     *     "readTimeout"    => 0,
+     *     "ssl"            => [],
+     * ]
+     *
+     * @throws SupportException
+     */
+    public function __construct(\Phalcon\Storage\SerializerFactory $factory, array $options = [])
+    {
+    }
+
+    /**
+     * Flushes/clears the cache
+     *
+     * @return bool
+     * @throws StorageException
+     */
+    public function clear(): bool
+    {
+    }
+
+    /**
+     * Returns the already connected adapter or connects to the Redis
+     * server(s)
+     *
+     * @return mixed|\Redis
+     * @throws StorageException
+     */
+    public function getAdapter(): mixed
+    {
+    }
+
+    /**
+     * Stores data in the adapter
+     *
+     * @param string $prefix
+     *
+     * @return array
+     * @throws StorageException
+     */
+    public function getKeys(string $prefix = ''): array
+    {
+    }
+
+    /**
+     * Stores data in the adapter forever. The key needs to manually deleted
+     * from the adapter.
+     *
+     * @param string $key
+     * @param mixed  $value
+     *
+     * @return bool
+     */
+    public function setForever(string $key, $value): bool
+    {
+    }
+
+    /**
+     * Decrements a stored number
+     *
+     * @param string $key
+     * @param int    $value
+     *
+     * @return bool|false|int
+     * @throws StorageException
+     */
+    protected function doDecrement(string $key, int $value = 1): int|bool
+    {
+    }
+
+    /**
+     * Deletes data from the adapter
+     *
+     * @param string $key
+     *
+     * @return bool
+     * @throws StorageException
+     */
+    protected function doDelete(string $key): bool
+    {
+    }
+
+    /**
+     * Deletes multiple keys from Redis using a single unlink call
+     *
+     * @param array $keys
+     * @return bool
+     */
+    protected function doDeleteMultiple(array $keys): bool
+    {
+    }
+
+    /**
+     * Checks if an element exists in the cache
+     *
+     * @param string $key
+     *
+     * @return bool
+     * @throws StorageException
+     */
+    protected function doHas(string $key): bool
+    {
+    }
+
+    /**
+     * Increments a stored number
+     *
+     * @param string $key
+     * @param int    $value
+     *
+     * @return bool|false|int
+     * @throws StorageException
+     */
+    protected function doIncrement(string $key, int $value = 1): int|bool
+    {
+    }
+
+    /**
+     * Stores data in the adapter. If the TTL is `null` (default) or not defined
+     * then the default TTL will be used, as set in this adapter. If the TTL
+     * is `0` or a negative number, a `delete()` will be issued, since this
+     * item has expired. If you need to set this key forever, you should use
+     * the `setForever()` method.
+     *
+     * @param string                $key
+     * @param mixed                 $value
+     * @param DateInterval|int|null $ttl
+     *
+     * @return bool
+     * @throws BaseException
+     */
+    protected function doSet(string $key, $value, $ttl = null): bool
+    {
+    }
+
+    /**
+     * @param \Redis $connection
+     *
+     * @return static
+     * @throws AuthenticationFailed
+     */
+    private function checkAuth(\Redis $connection): static
+    {
+    }
+
+    /**
+     * @param \Redis $connection
+     *
+     * @return static
+     * @throws ConnectionFailed
+     */
+    private function checkConnect(\Redis $connection): static
+    {
+    }
+
+    /**
+     * @param \Redis $connection
+     *
+     * @return static
+     * @throws DatabaseSelectionFailed
+     */
+    private function checkIndex(\Redis $connection): static
+    {
+    }
+
+    /**
+     * Checks the serializer. If it is a supported one it is set, otherwise
+     * the custom one is set.
+     *
+     * @param \Redis $connection
+     * @return void
+     */
+    private function setSerializer(\Redis $connection): void
+    {
+    }
+}

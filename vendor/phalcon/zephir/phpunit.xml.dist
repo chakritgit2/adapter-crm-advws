@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         colors="true"
+         verbose="true"
+>
+    <coverage pathCoverage="true">
+        <include>
+            <directory suffix=".php">src</directory>
+        </include>
+        <report>
+            <clover outputFile="tests/output/clover.xml"/>
+<!--             Uncomment to generate HTML coverage report-->
+<!--            <html outputDirectory="tests/output/html-coverage" lowUpperBound="50" highLowerBound="90"/>-->
+        </report>
+    </coverage>
+
+    <testsuites>
+        <testsuite name="Extension">
+            <directory suffix=".php">tests/Extension</directory>
+        </testsuite>
+        <testsuite name="Zephir">
+            <directory suffix=".php">tests/Zephir</directory>
+            <exclude>tests/Zephir/BlackBox</exclude>
+        </testsuite>
+        <testsuite name="BlackBox">
+            <directory suffix="Test.php">tests/Zephir/BlackBox</directory>
+        </testsuite>
+    </testsuites>
+
+    <php>
+        <ini name="default_charset" value="UTF-8"/>
+        <ini name="date.timezone" value="UTC"/>
+        <ini name="display_errors" value="on"/>
+        <ini name="display_startup_errors" value="on"/>
+        <ini name="error_reporting" value="-1"/>
+        <ini name="memory_limit" value="4G"/>
+
+        <const name="FIXTURES_PATH" value="./tests/fixtures"/>
+        <const name="ZEPHIRPATH" value="./"/>
+    </php>
+
+    <logging>
+        <junit outputFile="tests/output/junit.xml"/>
+        <!-- log type="coverage-html" target="./tests/output/html"/-->
+    </logging>
+</phpunit>

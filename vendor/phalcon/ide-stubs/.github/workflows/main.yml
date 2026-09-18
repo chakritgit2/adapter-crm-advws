@@ -1,0 +1,46 @@
+name: Stubs code validation
+
+on:
+    pull_request:
+    push:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        php-versions: ["8.1", "8.2"]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup PHP, with composer and extensions
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ matrix.php-versions }}
+        # mbstring/dom/zip/psr are needed by the tooling; apcu/imagick/memcached/redis
+        # provide the native classes the stubs type-hint (APCUIterator, Imagick*,
+        # Memcached, Redis, RedisCluster) so Psalm can resolve them.
+        extensions: mbstring, dom, zip, psr, apcu, imagick, memcached, redis
+
+    - name: Get Composer Cache Directory
+      id: composer-cache
+      run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: ${{ steps.composer-cache.outputs.dir }}
+        key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.json') }}
+        restore-keys: ${{ runner.os }}-composer-
+
+    - run: composer install --no-interaction --no-ansi --no-progress
+
+    - name: Static analysis (Psalm)
+      if: always()
+      run: composer analyze
+
+    - name: Coding standards (phpcs)
+      if: always()
+      run: composer cs

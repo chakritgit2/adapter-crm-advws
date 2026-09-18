@@ -1,0 +1,216 @@
+<?php
+
+/* This file is part of the Phalcon Framework.
+ *
+ * (c) Phalcon Team <team@phalcon.io>
+ *
+ * For the full copyright and license information, please view the LICENSE.txt
+ * file that was distributed with this source code.
+ */
+namespace Phalcon\Storage\Adapter;
+
+use DateInterval;
+use Exception as BaseException;
+use Phalcon\Storage\Exception as StorageException;
+use Phalcon\Storage\Exceptions\ConnectionFailed;
+use Phalcon\Storage\Exceptions\InvalidConfiguration;
+use Phalcon\Storage\SerializerFactory;
+use Phalcon\Support\Exception as SupportException;
+
+/**
+ * Libmemcached adapter
+ *
+ * Capabilities:
+ * - Counters: native atomic (Memcached::increment()/decrement()).
+ * - getKeys(): Memcached::getAllKeys(), which is server-dependent and may be
+ *   incomplete or unavailable on modern memcached builds.
+ * - Serializers: Phalcon-side plus libmemcached's own options.
+ */
+class Libmemcached extends \Phalcon\Storage\Adapter\AbstractAdapter
+{
+    /**
+     * @var string
+     */
+    protected $prefix = 'ph-memc-';
+
+    /**
+     * Libmemcached constructor.
+     *
+     * @param SerializerFactory $factory
+     * @param array             $options
+     *
+     * @throws SupportException
+     */
+    public function __construct(\Phalcon\Storage\SerializerFactory $factory, array $options = [])
+    {
+    }
+
+    /**
+     * Flushes/clears the cache
+     *
+     * @return bool
+     * @throws StorageException
+     */
+    public function clear(): bool
+    {
+    }
+
+    /**
+     * Returns the already connected adapter or connects to the Memcached
+     * server(s)
+     *
+     * @return \Memcached|null
+     * @throws StorageException
+     */
+    public function getAdapter(): mixed
+    {
+    }
+
+    /**
+     * Stores data in the adapter
+     *
+     * @param string $prefix
+     *
+     * @return array
+     * @throws StorageException
+     */
+    public function getKeys(string $prefix = ''): array
+    {
+    }
+
+    /**
+     * Stores data in the adapter forever. The key needs to manually deleted
+     * from the adapter.
+     *
+     * @param string $key
+     * @param mixed  $value
+     *
+     * @return bool
+     */
+    public function setForever(string $key, $value): bool
+    {
+    }
+
+    /**
+     * Decrements a stored number
+     *
+     * @param string $key
+     * @param int    $value
+     *
+     * @return bool|int
+     * @throws StorageException
+     */
+    protected function doDecrement(string $key, int $value = 1): int|bool
+    {
+    }
+
+    /**
+     * Deletes data from the adapter
+     *
+     * @param string $key
+     *
+     * @return bool
+     * @throws StorageException
+     */
+    protected function doDelete(string $key): bool
+    {
+    }
+
+    /**
+     * Deletes multiple keys from Memcached using a single deleteMulti call
+     *
+     * @param array $keys
+     * @return bool
+     */
+    protected function doDeleteMultiple(array $keys): bool
+    {
+    }
+
+    /**
+     * Checks if an element exists in the cache
+     *
+     * @param string $key
+     *
+     * @return bool
+     * @throws StorageException
+     */
+    protected function doHas(string $key): bool
+    {
+    }
+
+    /**
+     * Increments a stored number
+     *
+     * @param string $key
+     * @param int    $value
+     *
+     * @return bool|int
+     * @throws StorageException
+     */
+    protected function doIncrement(string $key, int $value = 1): int|bool
+    {
+    }
+
+    /**
+     * Stores data in the adapter. If the TTL is `null` (default) or not defined
+     * then the default TTL will be used, as set in this adapter. If the TTL
+     * is `0` or a negative number, a `delete()` will be issued, since this
+     * item has expired. If you need to set this key forever, you should use
+     * the `setForever()` method.
+     *
+     * @param string                $key
+     * @param mixed                 $value
+     * @param DateInterval|int|null $ttl
+     *
+     * @return bool
+     * @throws BaseException
+     * @throws StorageException
+     */
+    protected function doSet(string $key, $value, $ttl = null): bool
+    {
+    }
+
+    /**
+     * @param \Memcached $connection
+     * @param array      $client
+     *
+     * @return static
+     * @throws InvalidConfiguration
+     */
+    private function setOptions(\Memcached $connection, array $client): static
+    {
+    }
+
+    /**
+     * @param \Memcached $connection
+     * @param string     $saslUser
+     * @param string     $saslPass
+     *
+     * @return static
+     */
+    private function setSasl(\Memcached $connection, string $saslUser, string $saslPass): static
+    {
+    }
+
+    /**
+     * Checks the serializer. If it is a supported one it is set, otherwise
+     * the custom one is set.
+     *
+     * @param \Memcached $connection
+     * @return void
+     */
+    private function setSerializer(\Memcached $connection): void
+    {
+    }
+
+    /**
+     * @param \Memcached $connection
+     * @param array      $servers
+     *
+     * @return static
+     * @throws ConnectionFailed
+     */
+    private function setServers(\Memcached $connection, array $servers): static
+    {
+    }
+}
