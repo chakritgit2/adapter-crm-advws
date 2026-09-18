@@ -79,7 +79,13 @@ POST /adapter/endpoints/delete/{id}
 
 The final prefix and controller names are an implementation decision. Keep the routes distinct from the current legacy `/api` redirect routes and preserve tenant/company authorization if the adapter is CRM-hosted.
 
-## 6. Build and Verification
+## 6. Adapter Logs UI
+
+`app/views/adapter/logs.volt` is available at the tenant/company-scoped `/adapter/logs` route. It displays the latest 100 external connection events and API endpoint requests. The page includes a manual Refresh button and an Auto refresh selector with Off, 5-second, 15-second, 30-second, and 60-second intervals. The selected interval is stored in browser local storage, and refresh only reloads the current scoped log page.
+
+The page does not display credentials, query parameters, or raw external error details. Logs are written by `AdapterController` for connection tests and by `AdapterApiController` for authentication outcomes, source execution results, status codes, row counts, durations, and correlation IDs.
+
+## 7. Build and Verification
 
 Use the repository's existing Tailwind CLI dependency and source/output locations. The exact command depends on the installed package manager, but the source/output contract is:
 

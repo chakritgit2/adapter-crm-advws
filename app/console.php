@@ -54,6 +54,10 @@ $di->setShared('transformer', function () {
     return new TransformerService();
 });
 
+$di->setShared('adapterLogs', function () {
+    return new AdapterLogService($this->get('db'));
+});
+
 
 // Register the tasks directory
 /*IF THERE IS A PROBLEM VAR_DUMP THE LOADER */

@@ -442,6 +442,10 @@ $di->setShared('transformer', function () {
     return new TransformerService();
 });
 
+$di->setShared('adapterLogs', function () {
+    return new AdapterLogService($this->get('db'));
+});
+
 
 if (!function_exists('format_minutes')) {
     function format_minutes($totalMinutes)

@@ -17,8 +17,9 @@ The implementation now includes:
 - `app/migrations/1.0.0/uda_adapter.sql` with connection, endpoint, and sync checkpoint tables;
 - `AdapterConnections` and `AdapterEndpoints` models;
 - `AdapterController` and `AdapterApiController`;
-- `AdapterConnectionService` and `TransformerService`;
-- `SyncTask` plus adapter Volt views and explicit router entries.
+- `AdapterConnectionService`, `AdapterLogService`, and `TransformerService`;
+- `SyncTask` plus adapter Volt views and explicit router entries;
+- `002_adapter_logs.sql` for external connection and endpoint request history.
 
 The `app/config/loader.php` class map includes application controllers, models, services, helpers, traits, middleware, and the configured API-controller directory. Adding UDA classes should follow that existing autoloading convention, or use an explicit namespace and loader entry consistently across web and CLI runtimes.
 

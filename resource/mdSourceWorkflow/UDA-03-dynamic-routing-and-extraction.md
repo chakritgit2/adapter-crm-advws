@@ -58,7 +58,7 @@ Use the Phalcon DB adapter or a dedicated PDO connection for supported SQL drive
 6. Bind values with the correct scalar type and execute with a timeout.
 7. Convert rows/documents to the translator's input shape.
 8. Return JSON with a stable content type, request correlation ID, and bounded payload.
-9. Record duration, endpoint ID, row count, and outcome without secrets or raw query parameters.
+9. Record duration, endpoint ID, row count, request ID, and outcome without secrets or raw query parameters. These records are stored in `adapter_endpoint_logs`; external source activity is stored in `adapter_connection_logs`.
 
 Remote driver errors should be mapped to a generic `502`/`503` response for callers while detailed diagnostics go to protected server logs. Do not return SQL statements, hostnames, usernames, stack traces, or credential material.
 

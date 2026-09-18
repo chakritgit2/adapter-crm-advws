@@ -7,7 +7,8 @@
             <h1 class="text-2xl font-bold text-slate-900">Universal Data Adapter</h1>
             <p class="text-sm text-slate-500 mt-1">Manage tenant-scoped external data connections and read-only API slots.</p>
         </div>
-        <div class="flex gap-2">
+        <div class="flex flex-wrap gap-2">
+            <a href="{{ adapterBaseUrl }}/logs" class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 text-sm font-medium"><i class="fas fa-list"></i> View logs</a>
             <a href="{{ adapterBaseUrl }}/connections/create" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-800 text-sm font-medium"><i class="fas fa-database"></i> Add connection</a>
             <a href="{{ adapterBaseUrl }}/endpoints/create" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"><i class="fas fa-plug"></i> Add endpoint</a>
         </div>

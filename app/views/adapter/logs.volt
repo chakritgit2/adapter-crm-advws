@@ -1,0 +1,52 @@
+{% extends 'layouts/admin.volt' %}
+
+{% block content %}
+<div class="container mx-auto px-4 lg:px-8 py-8 space-y-8">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-900">Adapter Logs</h1>
+            <p class="text-sm text-slate-500 mt-1">Monitor external connection tests and API endpoint requests.</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <label for="auto-refresh" class="text-sm text-slate-600">Auto refresh</label>
+            <select id="auto-refresh" class="rounded-lg border-slate-300 text-sm">
+                <option value="0">Off</option>
+                <option value="5">Every 5 seconds</option>
+                <option value="15">Every 15 seconds</option>
+                <option value="30">Every 30 seconds</option>
+                <option value="60">Every minute</option>
+            </select>
+            <button type="button" id="refresh-logs" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 text-sm font-medium"><i class="fas fa-sync-alt"></i> Refresh</button>
+        </div>
+    </div>
+
+    <section class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between"><h2 class="font-semibold text-slate-900">External connection log</h2><span class="text-xs text-slate-500">Latest {{ connectionLogs|length }} entries</span></div>
+        <div class="overflow-x-auto"><table class="w-full text-left text-sm"><thead class="bg-slate-50 text-slate-600"><tr><th class="px-6 py-3">Time</th><th class="px-6 py-3">Connection</th><th class="px-6 py-3">Event</th><th class="px-6 py-3">Status</th><th class="px-6 py-3">Duration</th><th class="px-6 py-3">Message</th></tr></thead><tbody class="divide-y divide-slate-100">
+        {% for log in connectionLogs %}<tr><td class="px-6 py-3 whitespace-nowrap text-slate-500">{{ log['created_at'] }}</td><td class="px-6 py-3">{{ log['connection_name']|default('Deleted connection') }}</td><td class="px-6 py-3 font-mono text-xs">{{ log['event_type'] }}</td><td class="px-6 py-3"><span class="px-2 py-1 rounded-full text-xs {{ log['status'] == 'success' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700' }}">{{ log['status'] }}</span></td><td class="px-6 py-3">{{ log['duration_ms'] }} ms</td><td class="px-6 py-3 text-slate-500">{{ log['message']|default('—') }}</td></tr>{% else %}<tr><td colspan="6" class="px-6 py-10 text-center text-slate-500">No external connection activity recorded.</td></tr>{% endfor %}
+        </tbody></table></div>
+    </section>
+
+    <section class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between"><h2 class="font-semibold text-slate-900">API endpoint log</h2><span class="text-xs text-slate-500">Latest {{ endpointLogs|length }} entries</span></div>
+        <div class="overflow-x-auto"><table class="w-full text-left text-sm"><thead class="bg-slate-50 text-slate-600"><tr><th class="px-6 py-3">Time</th><th class="px-6 py-3">Endpoint</th><th class="px-6 py-3">HTTP</th><th class="px-6 py-3">Auth</th><th class="px-6 py-3">Rows</th><th class="px-6 py-3">Duration</th><th class="px-6 py-3">Request ID</th></tr></thead><tbody class="divide-y divide-slate-100">
+        {% for log in endpointLogs %}<tr><td class="px-6 py-3 whitespace-nowrap text-slate-500">{{ log['created_at'] }}</td><td class="px-6 py-3 font-mono text-xs">{{ log['api_name'] }}</td><td class="px-6 py-3"><span class="px-2 py-1 rounded-full text-xs {{ log['status_code'] >= 200 and log['status_code'] < 300 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700' }}">{{ log['status_code'] }}</span></td><td class="px-6 py-3">{{ log['auth_result'] }}</td><td class="px-6 py-3">{{ log['row_count'] }}</td><td class="px-6 py-3">{{ log['duration_ms'] }} ms</td><td class="px-6 py-3 font-mono text-xs text-slate-500">{{ log['request_id']|default('—') }}</td></tr>{% else %}<tr><td colspan="7" class="px-6 py-10 text-center text-slate-500">No API endpoint activity recorded.</td></tr>{% endfor %}
+        </tbody></table></div>
+    </section>
+    <p class="text-xs text-slate-400">Page loaded at <span id="last-refreshed">now</span>. Logs are limited to the latest 100 entries per category.</p>
+</div>
+<script>
+(function () {
+    const select = document.getElementById('auto-refresh');
+    const button = document.getElementById('refresh-logs');
+    const key = 'adapter-log-refresh-seconds';
+    let timer;
+    select.value = localStorage.getItem(key) || '0';
+    function schedule() { if (timer) window.clearInterval(timer); const seconds = Number(select.value); localStorage.setItem(key, select.value); if (seconds > 0) timer = window.setInterval(function () { window.location.reload(); }, seconds * 1000); }
+    button.addEventListener('click', function () { window.location.reload(); });
+    select.addEventListener('change', schedule);
+    document.getElementById('last-refreshed').textContent = new Date().toLocaleString();
+    schedule();
+}());
+</script>
+{% endblock %}

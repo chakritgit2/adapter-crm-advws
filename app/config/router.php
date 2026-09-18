@@ -90,14 +90,17 @@ $tenantGroup = new RouterGroup([
 ]);
 $tenantGroup->setPrefix('/{tenant_slug:' . $tenantSlugPattern . '}/{company_slug:' . $tenantSlugPattern . '}');
 
-// Company root -> company dashboard
+// Company root -> adapter dashboard. The HR dashboard is retired because
+// the employee/position tables are no longer part of the adapter database.
 $tenantGroup->addGet('', [
-    'action' => 'companiesDashboard'
+    'controller' => 'adapter',
+    'action' => 'index'
 ]);
 
 // Dashboard routes
 $tenantGroup->addGet('/dashboard', [
-    'action' => 'companiesDashboard'
+    'controller' => 'adapter',
+    'action' => 'index'
 ]);
 $tenantGroup->addGet('/dashboard/filter-employees', [
     'action' => 'filterEmployees'
@@ -453,6 +456,7 @@ $adapterGroup->addPost('/connections/delete/{id:[0-9]+}', ['action' => 'connecti
 $adapterGroup->addGet('/endpoints/create', ['action' => 'endpointCreate']);
 $adapterGroup->addPost('/endpoints/store', ['action' => 'endpointStore']);
 $adapterGroup->addPost('/endpoints/delete/{id:[0-9]+}', ['action' => 'endpointDelete']);
+$adapterGroup->addGet('/logs', ['action' => 'logs']);
 $router->mount($adapterGroup);
 
 // Auth routes (login / set-password / logout)

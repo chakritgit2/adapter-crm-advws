@@ -7,6 +7,7 @@ use Phalcon\Db\Enum as DbEnum;
 class AdapterController extends TenantBaseController
 {
     private AdapterConnectionService $adapterConnections;
+    private AdapterLogService $adapterLogs;
 
     public function initialize(): void
     {
@@ -16,6 +17,7 @@ class AdapterController extends TenantBaseController
             $this->sendFatalError(403, 'Adapter administration requires Super Admin access.');
         }
         $this->adapterConnections = $this->getDI()->get('adapterConnections');
+        $this->adapterLogs = $this->getDI()->get('adapterLogs');
         $this->view->setVar('adapterCsrf', AdapterCsrf::token($this->session));
         $this->view->setVar('adapterBaseUrl', $this->tenantUrl('/adapter'));
     }
@@ -93,18 +95,37 @@ class AdapterController extends TenantBaseController
         if (!$connection) {
             return $this->json(['status' => 'error', 'message' => 'Connection not found.'], 404);
         }
+        $startedAt = microtime(true);
         try {
             $this->adapterConnections->test($connection);
             $this->db->execute(
                 "UPDATE adapter_connections SET status = 'active', last_tested_at = NOW(), last_error = NULL WHERE id = :id",
                 ['id' => (int)$connection['id']]
             );
+            $this->adapterLogs->connection([
+                'tenant_id' => $this->currentTenantId,
+                'company_id' => $this->currentCompanyId,
+                'connection_id' => (int)$connection['id'],
+                'event_type' => 'connection_test',
+                'status' => 'success',
+                'duration_ms' => (int)round((microtime(true) - $startedAt) * 1000),
+                'message' => 'Connection test succeeded.',
+            ]);
             return $this->json(['status' => 'success', 'message' => 'Connection test succeeded.']);
         } catch (Throwable $e) {
             $this->db->execute(
                 "UPDATE adapter_connections SET status = 'failed', last_tested_at = NOW(), last_error = :error WHERE id = :id",
                 ['id' => (int)$connection['id'], 'error' => 'External connection test failed.']
             );
+            $this->adapterLogs->connection([
+                'tenant_id' => $this->currentTenantId,
+                'company_id' => $this->currentCompanyId,
+                'connection_id' => (int)$connection['id'],
+                'event_type' => 'connection_test',
+                'status' => 'failure',
+                'duration_ms' => (int)round((microtime(true) - $startedAt) * 1000),
+                'message' => 'Connection test failed.',
+            ]);
             return $this->json(['status' => 'error', 'message' => 'Connection test failed.'], 502);
         }
     }
@@ -118,6 +139,14 @@ class AdapterController extends TenantBaseController
         );
         $this->flashSession->success('Adapter connection deleted.');
         return $this->response->redirect($this->tenantUrl('/adapter'));
+    }
+
+    public function logsAction(): void
+    {
+        $this->view->setVar('title', 'Adapter Logs');
+        $this->view->setVar('connectionLogs', $this->connectionLogs());
+        $this->view->setVar('endpointLogs', $this->endpointLogs());
+        $this->view->pick('adapter/logs');
     }
 
     public function endpointCreateAction(): void
@@ -229,6 +258,31 @@ class AdapterController extends TenantBaseController
             "SELECT e.id, e.api_name, e.enabled, e.sync_enabled, e.created_at, c.name AS connection_name
              FROM adapter_endpoints e JOIN adapter_connections c ON c.id = e.connection_id
              WHERE e.tenant_id = :tenant_id AND e.company_id = :company_id ORDER BY e.api_name",
+            DbEnum::FETCH_ASSOC,
+            ['tenant_id' => $this->currentTenantId, 'company_id' => $this->currentCompanyId]
+        );
+    }
+
+    private function connectionLogs(): array
+    {
+        return $this->db->fetchAll(
+            "SELECT l.created_at, l.event_type, l.status, l.duration_ms, l.message, c.name AS connection_name
+             FROM adapter_connection_logs l
+             LEFT JOIN adapter_connections c ON c.id = l.connection_id
+             WHERE l.tenant_id = :tenant_id AND l.company_id = :company_id
+             ORDER BY l.created_at DESC, l.id DESC LIMIT 100",
+            DbEnum::FETCH_ASSOC,
+            ['tenant_id' => $this->currentTenantId, 'company_id' => $this->currentCompanyId]
+        );
+    }
+
+    private function endpointLogs(): array
+    {
+        return $this->db->fetchAll(
+            "SELECT created_at, api_name, status_code, auth_result, row_count, duration_ms, request_id
+             FROM adapter_endpoint_logs
+             WHERE tenant_id = :tenant_id AND company_id = :company_id
+             ORDER BY created_at DESC, id DESC LIMIT 100",
             DbEnum::FETCH_ASSOC,
             ['tenant_id' => $this->currentTenantId, 'company_id' => $this->currentCompanyId]
         );
