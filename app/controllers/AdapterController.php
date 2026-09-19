@@ -25,8 +25,34 @@ class AdapterController extends TenantBaseController
     public function indexAction(): void
     {
         $this->view->setVar('title', 'Universal Data Adapter');
-        $this->view->setVar('connections', $this->scopeConnections());
-        $this->view->setVar('endpoints', $this->scopeEndpoints());
+        $connections = $this->scopeConnections();
+        $endpoints = $this->scopeEndpoints();
+        $endpointsByConnection = [];
+        foreach ($endpoints as $endpoint) {
+            $endpointsByConnection[(int)$endpoint['connection_id']][] = $endpoint;
+        }
+
+        $activeConnections = 0;
+        $failedConnections = 0;
+        foreach ($connections as $connection) {
+            if ($connection['status'] === 'active') {
+                $activeConnections++;
+            } elseif ($connection['status'] === 'failed') {
+                $failedConnections++;
+            }
+        }
+        $enabledEndpoints = count(array_filter($endpoints, static fn($endpoint) => (int)$endpoint['enabled'] === 1));
+
+        $this->view->setVar('connections', $connections);
+        $this->view->setVar('endpoints', $endpoints);
+        $this->view->setVar('endpointsByConnection', $endpointsByConnection);
+        $this->view->setVar('adapterStats', [
+            'connections' => count($connections),
+            'activeConnections' => $activeConnections,
+            'failedConnections' => $failedConnections,
+            'endpoints' => count($endpoints),
+            'enabledEndpoints' => $enabledEndpoints,
+        ]);
         $this->view->pick('adapter/index');
     }
 
@@ -111,7 +137,12 @@ class AdapterController extends TenantBaseController
                 'duration_ms' => (int)round((microtime(true) - $startedAt) * 1000),
                 'message' => 'Connection test succeeded.',
             ]);
-            return $this->json(['status' => 'success', 'message' => 'Connection test succeeded.']);
+            return $this->json([
+                'status' => 'success',
+                'message' => 'Connection test succeeded.',
+                'connectionStatus' => 'active',
+                'lastTestedAt' => $this->connectionLastTestedAt((int)$connection['id']),
+            ]);
         } catch (Throwable $e) {
             $this->db->execute(
                 "UPDATE adapter_connections SET status = 'failed', last_tested_at = NOW(), last_error = :error WHERE id = :id",
@@ -126,7 +157,12 @@ class AdapterController extends TenantBaseController
                 'duration_ms' => (int)round((microtime(true) - $startedAt) * 1000),
                 'message' => 'Connection test failed: ' . $e->getMessage(),
             ]);
-            return $this->json(['status' => 'error', 'message' => 'Connection test failed.'], 502);
+            return $this->json([
+                'status' => 'error',
+                'message' => 'Connection test failed.',
+                'connectionStatus' => 'failed',
+                'lastTestedAt' => $this->connectionLastTestedAt((int)$connection['id']),
+            ], 502);
         }
     }
 
@@ -152,6 +188,8 @@ class AdapterController extends TenantBaseController
     public function endpointCreateAction(): void
     {
         $this->view->setVar('title', 'Add Adapter Endpoint');
+        $this->view->setVar('endpoint', null);
+        $this->view->setVar('selectedConnectionId', (int)$this->request->getQuery('connection_id', 'int', 0));
         $this->view->setVar('connections', $this->scopeConnections());
         $this->view->pick('adapter/endpoint-form');
     }
@@ -159,50 +197,86 @@ class AdapterController extends TenantBaseController
     public function endpointStoreAction()
     {
         $this->requireCsrf();
-        $apiName = trim((string)$this->request->getPost('api_name', 'string'));
-        $query = trim((string)$this->request->getPost('query_template', 'string'));
-        $connectionId = (int)$this->request->getPost('connection_id', 'int', 0);
-        $connection = $this->findConnection($connectionId);
-        if (!preg_match('/^[A-Za-z][A-Za-z0-9_-]{1,99}$/', $apiName)) {
-            return $this->adapterError('API name must contain 2-100 letters, numbers, underscores, or hyphens.', '/adapter/endpoints/create');
+        $input = $this->endpointInput();
+        if ($input['error']) {
+            return $this->adapterError($input['error'], $input['path']);
         }
-        if (!$connection) {
-            return $this->adapterError('Select a valid connection.', '/adapter/endpoints/create');
-        }
-        if (strtolower((string)$connection['engine']) === 'mongodb') {
-            $definition = json_decode($query, true);
-            if ($query === '' || !is_array($definition) || empty($definition['_collection']) || count(array_filter(array_keys($definition), static fn($key) => str_starts_with((string)$key, '_') && $key !== '_collection')) > 0) {
-                return $this->adapterError('MongoDB endpoints require a JSON filter with an _collection key.', '/adapter/endpoints/create');
-            }
-        } elseif ($query === '' || substr_count($query, ';') > 0 || !preg_match('/^\s*(SELECT|WITH)\b/i', $query)) {
-            return $this->adapterError('Only one read-only SELECT/WITH query is allowed.', '/adapter/endpoints/create');
-        }
-        $existing = $this->db->fetchOne('SELECT id FROM adapter_endpoints WHERE api_name = :api_name', DbEnum::FETCH_ASSOC, ['api_name' => $apiName]);
-        if ($existing) {
-            return $this->adapterError('That API name is already in use.', '/adapter/endpoints/create');
-        }
+
         $plainKey = rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '=');
-        $webhookApiKey = (string)$this->request->getPost('webhook_api_key', 'string');
         $this->db->execute(
-            "INSERT INTO adapter_endpoints (tenant_id, company_id, connection_id, api_name, query_template, api_key_hash, sync_enabled, sync_cursor_column, webhook_url, webhook_api_key_ciphertext)
-             VALUES (:tenant_id, :company_id, :connection_id, :api_name, :query_template, :api_key_hash, :sync_enabled, :sync_cursor_column, :webhook_url, :webhook_api_key_ciphertext)",
-            [
+            "INSERT INTO adapter_endpoints (tenant_id, company_id, connection_id, api_name, query_template, api_key_hash, enabled, sync_enabled, sync_cursor_column, webhook_url, webhook_api_key_ciphertext)
+             VALUES (:tenant_id, :company_id, :connection_id, :api_name, :query_template, :api_key_hash, :enabled, :sync_enabled, :sync_cursor_column, :webhook_url, :webhook_api_key_ciphertext)",
+            $input['values'] + [
                 'tenant_id' => $this->currentTenantId,
                 'company_id' => $this->currentCompanyId,
-                'connection_id' => $connectionId,
-                'api_name' => $apiName,
-                'query_template' => $query,
                 'api_key_hash' => password_hash($plainKey, PASSWORD_DEFAULT),
-                'sync_enabled' => $this->request->getPost('sync_enabled', 'int', 0) === 1 ? 1 : 0,
-                'sync_cursor_column' => trim((string)$this->request->getPost('sync_cursor_column', 'string')) ?: null,
-                'webhook_url' => trim((string)$this->request->getPost('webhook_url', 'string')) ?: null,
-                'webhook_api_key_ciphertext' => $webhookApiKey !== '' ? $this->getDI()->get('adapterEncryption')->encrypt($webhookApiKey) : null,
             ]
         );
         $this->view->setVar('newApiKey', $plainKey);
         $this->view->setVar('connections', $this->scopeConnections());
         $this->view->setVar('title', 'Adapter Endpoint Created');
         $this->view->pick('adapter/endpoint-created');
+    }
+
+    public function endpointEditAction()
+    {
+        $endpoint = $this->findEndpoint((int)$this->dispatcher->getParam('id'));
+        if (!$endpoint) {
+            $this->flashSession->error('Endpoint not found.');
+            return $this->response->redirect($this->tenantUrl('/adapter'));
+        }
+        $this->view->setVar('title', 'Edit Adapter Endpoint');
+        $this->view->setVar('endpoint', $endpoint);
+        $this->view->setVar('selectedConnectionId', (int)$endpoint['connection_id']);
+        $this->view->setVar('connections', $this->scopeConnections());
+        $this->view->pick('adapter/endpoint-form');
+    }
+
+    public function endpointUpdateAction()
+    {
+        $this->requireCsrf();
+        $endpoint = $this->findEndpoint((int)$this->dispatcher->getParam('id'));
+        if (!$endpoint) {
+            return $this->adapterError('Endpoint not found.', '/adapter');
+        }
+        $input = $this->endpointInput($endpoint);
+        if ($input['error']) {
+            return $this->adapterError($input['error'], $input['path']);
+        }
+
+        $this->db->execute(
+            "UPDATE adapter_endpoints SET connection_id = :connection_id, api_name = :api_name, query_template = :query_template,
+             enabled = :enabled, sync_enabled = :sync_enabled, sync_cursor_column = :sync_cursor_column,
+             webhook_url = :webhook_url, webhook_api_key_ciphertext = :webhook_api_key_ciphertext
+             WHERE id = :id AND tenant_id = :tenant_id AND company_id = :company_id",
+            $input['values'] + [
+                'id' => (int)$endpoint['id'],
+                'tenant_id' => $this->currentTenantId,
+                'company_id' => $this->currentCompanyId,
+            ]
+        );
+        $this->flashSession->success('Adapter endpoint updated.');
+        return $this->response->redirect($this->tenantUrl('/adapter'));
+    }
+
+    public function endpointToggleAction()
+    {
+        $this->requireCsrf();
+        $endpoint = $this->findEndpoint((int)$this->dispatcher->getParam('id'));
+        if (!$endpoint) {
+            return $this->adapterError('Endpoint not found.', '/adapter');
+        }
+        $this->db->execute(
+            "UPDATE adapter_endpoints SET enabled = :enabled WHERE id = :id AND tenant_id = :tenant_id AND company_id = :company_id",
+            [
+                'enabled' => (int)$endpoint['enabled'] === 1 ? 0 : 1,
+                'id' => (int)$endpoint['id'],
+                'tenant_id' => $this->currentTenantId,
+                'company_id' => $this->currentCompanyId,
+            ]
+        );
+        $this->flashSession->success('Adapter endpoint updated.');
+        return $this->response->redirect($this->tenantUrl('/adapter'));
     }
 
     public function endpointDeleteAction()
@@ -214,6 +288,63 @@ class AdapterController extends TenantBaseController
         );
         $this->flashSession->success('Adapter endpoint deleted.');
         return $this->response->redirect($this->tenantUrl('/adapter'));
+    }
+
+    private function endpointInput(?array $existing = null): array
+    {
+        $apiName = trim((string)$this->request->getPost('api_name', 'string'));
+        $query = trim((string)$this->request->getPost('query_template', 'string', ''));
+        $connectionId = (int)$this->request->getPost('connection_id', 'int', 0);
+        $connection = $this->findConnection($connectionId);
+        $redirectPath = $existing
+            ? '/adapter/endpoints/edit/' . (int)$existing['id']
+            : '/adapter/endpoints/create' . ($connectionId > 0 ? '?connection_id=' . $connectionId : '');
+
+        if (!preg_match('/^[A-Za-z][A-Za-z0-9_-]{1,99}$/', $apiName)) {
+            return ['error' => 'API name must contain 2-100 letters, numbers, underscores, or hyphens.', 'path' => $redirectPath, 'values' => []];
+        }
+        if (!$connection) {
+            return ['error' => 'Select a valid connection.', 'path' => $redirectPath, 'values' => []];
+        }
+        if (strtolower((string)$connection['engine']) === 'mongodb') {
+            try {
+                $definition = json_decode($query, true, 512, JSON_THROW_ON_ERROR);
+            } catch (JsonException $e) {
+                $definition = null;
+            }
+            if ($query === '' || !is_array($definition) || empty($definition['_collection']) || count(array_filter(array_keys($definition), static fn($key) => str_starts_with((string)$key, '_') && $key !== '_collection')) > 0) {
+                return ['error' => 'MongoDB endpoints require a JSON filter with an _collection key.', 'path' => $redirectPath, 'values' => []];
+            }
+        } elseif ($query === '' || substr_count($query, ';') > 0 || !preg_match('/^\s*(SELECT|WITH)\b/i', $query)) {
+            return ['error' => 'Only one read-only SELECT/WITH query is allowed.', 'path' => $redirectPath, 'values' => []];
+        }
+
+        $duplicateSql = 'SELECT id FROM adapter_endpoints WHERE api_name = :api_name';
+        $duplicateParams = ['api_name' => $apiName];
+        if ($existing) {
+            $duplicateSql .= ' AND id <> :id';
+            $duplicateParams['id'] = (int)$existing['id'];
+        }
+        if ($this->db->fetchOne($duplicateSql, DbEnum::FETCH_ASSOC, $duplicateParams)) {
+            return ['error' => 'That API name is already in use.', 'path' => $redirectPath, 'values' => []];
+        }
+
+        $webhookApiKey = (string)$this->request->getPost('webhook_api_key', 'string');
+        $webhookCiphertext = $existing['webhook_api_key_ciphertext'] ?? null;
+        if ($webhookApiKey !== '') {
+            $webhookCiphertext = $this->getDI()->get('adapterEncryption')->encrypt($webhookApiKey);
+        }
+
+        return ['error' => null, 'path' => $redirectPath, 'values' => [
+            'connection_id' => $connectionId,
+            'api_name' => $apiName,
+            'query_template' => $query,
+            'enabled' => $this->request->getPost('enabled', 'int', 0) === 1 ? 1 : 0,
+            'sync_enabled' => $this->request->getPost('sync_enabled', 'int', 0) === 1 ? 1 : 0,
+            'sync_cursor_column' => trim((string)$this->request->getPost('sync_cursor_column', 'string')) ?: null,
+            'webhook_url' => trim((string)$this->request->getPost('webhook_url', 'string')) ?: null,
+            'webhook_api_key_ciphertext' => $webhookCiphertext,
+        ]];
     }
 
     private function connectionInput(?array $existing = null): array
@@ -265,7 +396,7 @@ class AdapterController extends TenantBaseController
     private function scopeEndpoints(): array
     {
         return $this->db->fetchAll(
-            "SELECT e.id, e.api_name, e.enabled, e.sync_enabled, e.created_at, c.name AS connection_name
+            "SELECT e.id, e.connection_id, e.api_name, e.enabled, e.sync_enabled, e.created_at, c.name AS connection_name
              FROM adapter_endpoints e JOIN adapter_connections c ON c.id = e.connection_id
              WHERE e.tenant_id = :tenant_id AND e.company_id = :company_id ORDER BY e.api_name",
             DbEnum::FETCH_ASSOC,
@@ -303,10 +434,30 @@ class AdapterController extends TenantBaseController
         );
     }
 
+    private function connectionLastTestedAt(int $id): ?string
+    {
+        $row = $this->db->fetchOne(
+            'SELECT last_tested_at FROM adapter_connections WHERE id = :id AND tenant_id = :tenant_id AND company_id = :company_id LIMIT 1',
+            DbEnum::FETCH_ASSOC,
+            ['id' => $id, 'tenant_id' => $this->currentTenantId, 'company_id' => $this->currentCompanyId]
+        );
+        return $row['last_tested_at'] ?? null;
+    }
+
     private function findConnection(int $id): ?array
     {
         $row = $this->db->fetchOne(
             'SELECT * FROM adapter_connections WHERE id = :id AND tenant_id = :tenant_id AND company_id = :company_id LIMIT 1',
+            DbEnum::FETCH_ASSOC,
+            ['id' => $id, 'tenant_id' => $this->currentTenantId, 'company_id' => $this->currentCompanyId]
+        );
+        return $row ?: null;
+    }
+
+    private function findEndpoint(int $id): ?array
+    {
+        $row = $this->db->fetchOne(
+            'SELECT * FROM adapter_endpoints WHERE id = :id AND tenant_id = :tenant_id AND company_id = :company_id LIMIT 1',
             DbEnum::FETCH_ASSOC,
             ['id' => $id, 'tenant_id' => $this->currentTenantId, 'company_id' => $this->currentCompanyId]
         );
