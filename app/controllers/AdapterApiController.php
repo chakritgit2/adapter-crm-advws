@@ -12,7 +12,7 @@ class AdapterApiController extends \Phalcon\Mvc\Controller
         $requestId = bin2hex(random_bytes(12));
         $startedAt = microtime(true);
         $endpoint = $this->db->fetchOne(
-            "SELECT e.*, c.engine, c.host, c.port, c.db_name, c.username, c.password_ciphertext,
+            "SELECT e.*, c.engine, c.host, c.port, c.db_name, c.username, c.password_ciphertext, c.options_json,
                     t.id AS tenant_id, e.company_id, t.slug AS tenant_public_id, co.slug AS companies_public_id
              FROM adapter_endpoints e
              JOIN adapter_connections c ON c.id = e.connection_id AND c.status = 'active'
@@ -74,7 +74,7 @@ class AdapterApiController extends \Phalcon\Mvc\Controller
             }
             $maxRows = (int)$this->config->path('adapter.maxRows', 1000);
             if (count($rows) > $maxRows) {
-                throw new RuntimeException('Result exceeds the configured row limit.');
+                throw new InvalidArgumentException('Result exceeds the configured row limit.');
             }
             $payload = $this->getDI()->get('transformer')->transform($rows, [
                 'tenant_public_id' => $endpoint['tenant_public_id'],
@@ -101,9 +101,17 @@ class AdapterApiController extends \Phalcon\Mvc\Controller
                 'started_at' => $startedAt,
             ]);
         } catch (InvalidArgumentException $e) {
+            $isResultLimit = str_starts_with($e->getMessage(), 'Result exceeds the configured row limit.');
+            $errorCode = $isResultLimit ? 'RESULT_LIMIT_EXCEEDED' : 'BAD_REQUEST';
+            $statusCode = $isResultLimit ? 413 : 400;
             return $this->respond(
-                ['status' => 'error', 'error' => ['code' => 'BAD_REQUEST', 'message' => $e->getMessage()]],
-                400,
+                ['status' => 'error', 'error' => [
+                    'code' => $errorCode,
+                    'message' => $isResultLimit
+                        ? 'The result exceeds the configured row limit.'
+                        : $e->getMessage(),
+                ]],
+                $statusCode,
                 [
                     'tenant_id' => $endpoint['tenant_id'],
                     'company_id' => $endpoint['company_id'],
@@ -111,7 +119,7 @@ class AdapterApiController extends \Phalcon\Mvc\Controller
                     'api_name' => $apiName,
                     'request_id' => $requestId,
                     'auth_result' => 'accepted',
-                    'error_code' => 'BAD_REQUEST',
+                    'error_code' => $errorCode,
                     'started_at' => $startedAt,
                 ]
             );

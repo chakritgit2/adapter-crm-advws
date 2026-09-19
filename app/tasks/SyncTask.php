@@ -21,7 +21,7 @@ class SyncTask extends Task
             $bind['endpoint_id'] = (int)$endpointId;
         }
         $endpoints = $this->db->fetchAll(
-            "SELECT e.*, c.host, c.port, c.engine, c.db_name, c.username, c.password_ciphertext,
+            "SELECT e.*, c.host, c.port, c.engine, c.db_name, c.username, c.password_ciphertext, c.options_json,
                     t.slug AS tenant_public_id, co.slug AS companies_public_id
              FROM adapter_endpoints e
              JOIN adapter_connections c ON c.id = e.connection_id AND c.status = 'active'
