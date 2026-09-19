@@ -45,7 +45,8 @@
                 <button type="button" id="insert-example" class="text-xs text-blue-600 hover:text-blue-800 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 rounded px-1 hidden">Insert Example</button>
             </div>
             <textarea required name="query_template" id="query-template" rows="8" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm text-slate-900 placeholder-slate-400 font-mono shadow-xs focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" placeholder="Select a connection to load a matching query example">{{ endpoint['query_template']|default('') }}</textarea>
-            <p id="query-help" class="text-xs text-slate-500 mt-1">SQL connections accept a single <code>SELECT</code>/<code>WITH</code> statement with <code>:named</code> placeholders; MongoDB connections accept a JSON filter with an <code>_collection</code> key.</p>
+            <p id="query-help" class="text-xs text-slate-500 mt-1">Use <code>&#123;&#123;variable&#125;&#125;</code> placeholders for request values. SQL placeholders must be unquoted and also accept <code>:named</code>; MongoDB accepts a JSON filter or a <code>_pipeline</code> aggregation.</p>
+            <p id="query-parameters" class="text-xs text-slate-500 mt-1"></p>
         </div>
 
         <div class="border-t border-slate-200 pt-5 space-y-4">
@@ -71,7 +72,7 @@
             <div class="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm">
                 <h2 class="font-semibold text-slate-900">Synchronization settings explained</h2>
                 <dl class="mt-3 space-y-3">
-                    <div><dt class="font-medium text-slate-900">Cursor column</dt><dd class="text-slate-600 mt-0.5">A timestamp or incrementing column used to fetch only changed records.</dd></div>
+                    <div><dt class="font-medium text-slate-900">Cursor column</dt><dd class="text-slate-600 mt-0.5">A timestamp or incrementing column used to fetch only changed records. Use <code>&#123;&#123;last_cursor&#125;&#125;</code> or <code>&#123;&#123;last_sync_timestamp&#125;&#125;</code> in the query template when the sync needs the previous value.</dd></div>
                     <div><dt class="font-medium text-slate-900">Webhook URL</dt><dd class="text-slate-600 mt-0.5">The HTTPS endpoint that receives transformed records after each sync run.</dd></div>
                     <div><dt class="font-medium text-slate-900">Webhook API key</dt><dd class="text-slate-600 mt-0.5">A secret sent with sync deliveries. It is encrypted at rest and never displayed.</dd></div>
                 </dl>
@@ -86,25 +87,59 @@
 </div>
 <script>
 (function () {
+    var variableOpen = '{' + '{';
+    var variableClose = '}' + '}';
+    function variable(name) {
+        return variableOpen + name + variableClose;
+    }
     var examples = {
-        mysql: "SELECT id, name, email FROM users WHERE status = :status ORDER BY id LIMIT :limit",
-        mariadb: "SELECT id, name, email FROM users WHERE status = :status ORDER BY id LIMIT :limit",
-        pgsql: 'SELECT id, name, email FROM "users" WHERE status = :status ORDER BY id LIMIT :limit',
-        mongodb: '{\n    "_collection": "users",\n    "status": "active"\n}'
+        mysql: "SELECT id, name, email FROM users WHERE status = " + variable('status') + " ORDER BY id LIMIT 100",
+        mariadb: "SELECT id, name, email FROM users WHERE status = " + variable('status') + " ORDER BY id LIMIT 100",
+        pgsql: 'SELECT id, name, email FROM "users" WHERE status = ' + variable('status') + ' ORDER BY id LIMIT 100',
+        mongodb: '{\n    "_collection": "kiosk",\n    "_pipeline": [\n        {"$match": {"_id": {"$in": "' + variable('kiosk_ids') + '"}}},\n        {"$lookup": {"from": "kiosk_model", "localField": "modelId", "foreignField": "_id", "as": "modelDetails"}},\n        {"$unwind": {"path": "$modelDetails", "preserveNullAndEmptyArrays": true}}\n    ]\n}'
     };
     var hints = {
-        mysql: 'MySQL example uses <code>:named</code> placeholders bound from request parameters. Only a single read-only SELECT/WITH statement is allowed.',
-        mariadb: 'MariaDB example uses <code>:named</code> placeholders bound from request parameters. Only a single read-only SELECT/WITH statement is allowed.',
-        pgsql: 'PostgreSQL example uses <code>:named</code> placeholders bound from request parameters. Only a single read-only SELECT/WITH statement is allowed.',
-        mongodb: 'MongoDB endpoints require a JSON filter containing an <code>_collection</code> key; all other keys form the query filter. Dynamic request parameters are not supported.'
+        mysql: 'Use <code>' + variable('status') + '</code> or <code>:status</code> placeholders. Do not quote SQL placeholders. Call the endpoint with <code>?status=active</code>.',
+        mariadb: 'Use <code>' + variable('status') + '</code> or <code>:status</code> placeholders. Do not quote SQL placeholders. Call the endpoint with <code>?status=active</code>.',
+        pgsql: 'Use <code>' + variable('status') + '</code> or <code>:status</code> placeholders. Do not quote SQL placeholders. Call the endpoint with <code>?status=active</code>.',
+        mongodb: 'Use a JSON filter or a <code>_pipeline</code> array. Variables belong in match/filter string values; array parameters use <code>?kiosk_ids[]=7&amp;kiosk_ids[]=8</code>. Collection names, field paths, and filter keys remain fixed.'
     };
     var select = document.getElementById('connection-select');
     var textarea = document.getElementById('query-template');
     var help = document.getElementById('query-help');
+    var parameterHelp = document.getElementById('query-parameters');
     var insertBtn = document.getElementById('insert-example');
     function selectedEngine() {
         var option = select.options[select.selectedIndex];
         return option ? (option.getAttribute('data-engine') || '') : '';
+    }
+    function queryVariables() {
+        var variables = [];
+        var pattern = new RegExp('\\{\\{\\s*([A-Za-z_][A-Za-z0-9_]*)\\s*\\}\\}|(?:^|[^:]):([A-Za-z_][A-Za-z0-9_]*)', 'g');
+        var match;
+        while ((match = pattern.exec(textarea.value)) !== null) {
+            var name = match[1] || match[2];
+            if (name && variables.indexOf(name) === -1) {
+                variables.push(name);
+            }
+        }
+        return variables;
+    }
+    function updateParameterHelp() {
+        if (!parameterHelp) return;
+        var variables = queryVariables();
+        var reserved = variables.filter(function (name) {
+            return name === 'apikey' || name === '_url';
+        });
+        if (reserved.length) {
+            parameterHelp.textContent = 'Reserved variable names cannot be used: ' + reserved.join(', ');
+            parameterHelp.className = 'text-xs text-red-600 mt-1';
+            return;
+        }
+        parameterHelp.textContent = variables.length
+            ? 'Request parameters: ' + variables.join(', ')
+            : 'No request variables declared.';
+        parameterHelp.className = 'text-xs text-slate-500 mt-1';
     }
     function applyEngine() {
         var engine = selectedEngine();
@@ -116,17 +151,20 @@
             insertBtn.classList.remove('hidden');
         } else {
             textarea.placeholder = 'Select a connection to load a matching query example';
-            help.innerHTML = 'SQL connections accept a single <code>SELECT</code>/<code>WITH</code> statement with <code>:named</code> placeholders; MongoDB connections accept a JSON filter with an <code>_collection</code> key.';
+            help.innerHTML = 'Use <code>' + variable('status') + '</code> placeholders for request values. SQL also accepts <code>:named</code> placeholders; MongoDB accepts a JSON filter or a <code>_pipeline</code> aggregation.';
             insertBtn.classList.add('hidden');
         }
+        updateParameterHelp();
     }
     insertBtn.addEventListener('click', function () {
         var example = examples[selectedEngine()];
         if (example) {
             textarea.value = example;
             textarea.focus();
+            updateParameterHelp();
         }
     });
+    textarea.addEventListener('input', updateParameterHelp);
     select.addEventListener('change', applyEngine);
     applyEngine();
 })();

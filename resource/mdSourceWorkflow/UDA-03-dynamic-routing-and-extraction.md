@@ -4,7 +4,7 @@
 
 The proposed passive adapter endpoint is a synchronous HTTP execution path that resolves an administrator-defined API slot, authenticates the caller, executes a parameterized query against the linked external connection, and returns a normalized response.
 
-`app/controllers/AdapterApiController.php` implements this endpoint. It is a read-only, API-key-authenticated execution path with SQL parameter binding and a static JSON-filter path for MongoDB.
+`app/controllers/AdapterApiController.php` implements this endpoint. It is a read-only, API-key-authenticated execution path with SQL parameter binding and value-only placeholders for MongoDB filters and aggregation pipelines.
 
 ## 2. Current Router Behavior
 
@@ -42,11 +42,25 @@ The endpoint record supplies the query template. Request parameters supply value
 
 ```sql
 SELECT * FROM subsidiary_products WHERE user_id = :user_id
+-- Administrators may also write {{user_id}}; it is normalized to a bound marker.
+-- SQL placeholders must remain unquoted in the template.
 ```
 
 The implementation should parse the named placeholders from the template, allow only the corresponding request keys, and bind values through the selected driver. It must never concatenate request data into SQL. Table names, column names, sort expressions, operators, and complete SQL fragments must not be user-controlled.
 
-Use the Phalcon DB adapter or a dedicated PDO connection for supported SQL drivers. MongoDB requires a separately reviewed driver and BSON filter mapping; it must not be treated as SQL with string substitution. Set connection, statement, row-count, and response-size limits so an endpoint cannot unintentionally dump an entire vendor database.
+Use the Phalcon DB adapter or a dedicated PDO connection for supported SQL drivers. MongoDB endpoints may contain either a static find filter or a `_pipeline` aggregation array:
+
+```json
+{
+  "_collection": "kiosk",
+  "_pipeline": [
+    {"$match": {"_id": {"$in": "{{kiosk_ids}}"}}},
+    {"$lookup": {"from": "kiosk_model", "localField": "modelId", "foreignField": "_id", "as": "modelDetails"}}
+  ]
+}
+```
+
+`{{variable}}` placeholders may appear only in MongoDB match/filter values, `$lookup.let` values, and search query/filter values. `_collection`, filter keys, stage names, field paths, and collection references such as `$lookup.from` must remain static. Sequential request arrays such as `?kiosk_ids[]=7&kiosk_ids[]=8` support `$in` filters. Aggregation uses an explicit read-only stage allow-list and recursively validates nested `$lookup`, `$facet`, and `$unionWith` pipelines. Write or server-side execution constructs such as `$out`, `$merge`, `$function`, `$accumulator`, and `$where` are rejected. Set connection, statement, row-count, and response-size limits so an endpoint cannot unintentionally dump an entire vendor database.
 
 ## 5. Suggested Execution Flow
 

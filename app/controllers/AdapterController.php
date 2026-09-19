@@ -306,17 +306,53 @@ class AdapterController extends TenantBaseController
         if (!$connection) {
             return ['error' => 'Select a valid connection.', 'path' => $redirectPath, 'values' => []];
         }
+        $queryWithoutVariables = preg_replace('/\{\{\s*[A-Za-z_][A-Za-z0-9_]*\s*\}\}/', '', $query);
+        if (str_contains((string)$queryWithoutVariables, '{{') || str_contains((string)$queryWithoutVariables, '}}')) {
+            return ['error' => 'Query variables must use the {{variable_name}} format.', 'path' => $redirectPath, 'values' => []];
+        }
+        $templateParameters = [];
         if (strtolower((string)$connection['engine']) === 'mongodb') {
+            if ($query === '') {
+                return ['error' => 'MongoDB query template is required.', 'path' => $redirectPath, 'values' => []];
+            }
             try {
                 $definition = json_decode($query, true, 512, JSON_THROW_ON_ERROR);
             } catch (JsonException $e) {
-                $definition = null;
+                return ['error' => 'MongoDB query template must be a JSON object. Shell syntax such as db.collection.aggregate(...) is not supported.', 'path' => $redirectPath, 'values' => []];
             }
-            if ($query === '' || !is_array($definition) || empty($definition['_collection']) || count(array_filter(array_keys($definition), static fn($key) => str_starts_with((string)$key, '_') && $key !== '_collection')) > 0) {
-                return ['error' => 'MongoDB endpoints require a JSON filter with an _collection key.', 'path' => $redirectPath, 'values' => []];
+            $collection = is_array($definition) ? ($definition['_collection'] ?? null) : null;
+            if (!is_string($collection) || trim($collection) === '') {
+                return ['error' => 'MongoDB endpoints require a static _collection string.', 'path' => $redirectPath, 'values' => []];
+            }
+            if (preg_match('/\{\{|\}\}/', $collection)) {
+                return ['error' => 'MongoDB _collection cannot use request variables.', 'path' => $redirectPath, 'values' => []];
+            }
+            $invalidReservedKeys = array_values(array_filter(
+                array_keys($definition),
+                static fn($key) => str_starts_with((string)$key, '_') && !in_array($key, ['_collection', '_pipeline'], true)
+            ));
+            if ($invalidReservedKeys) {
+                return ['error' => 'Unsupported MongoDB option keys: ' . implode(', ', array_map('strval', $invalidReservedKeys)), 'path' => $redirectPath, 'values' => []];
+            }
+            try {
+                if (array_key_exists('_pipeline', $definition)) {
+                    if (count($definition) !== 2 || !is_array($definition['_pipeline'])) {
+                        throw new InvalidArgumentException('MongoDB aggregation templates require only _collection and a _pipeline array.');
+                    }
+                    $this->adapterConnections->validateMongoPipeline($definition['_pipeline']);
+                }
+                $templateParameters = $this->adapterConnections->mongoPlaceholders($definition);
+            } catch (InvalidArgumentException $e) {
+                return ['error' => $e->getMessage(), 'path' => $redirectPath, 'values' => []];
             }
         } elseif ($query === '' || substr_count($query, ';') > 0 || !preg_match('/^\s*(SELECT|WITH)\b/i', $query)) {
             return ['error' => 'Only one read-only SELECT/WITH query is allowed.', 'path' => $redirectPath, 'values' => []];
+        } else {
+            $templateParameters = $this->adapterConnections->placeholders($query);
+        }
+        $reservedParameters = array_intersect(['apikey', '_url'], $templateParameters);
+        if ($reservedParameters) {
+            return ['error' => 'These query variable names are reserved: ' . implode(', ', $reservedParameters), 'path' => $redirectPath, 'values' => []];
         }
 
         $duplicateSql = 'SELECT id FROM adapter_endpoints WHERE api_name = :api_name';

@@ -64,20 +64,27 @@ class SyncTask extends Task
             $parameters = [];
             $cursor = $checkpoint['cursor_value'];
             $query = (string)$endpoint['query_template'];
+            $adapterConnections = $this->getDI()->get('adapterConnections');
             if (strtolower((string)$endpoint['engine']) === 'mongodb') {
                 $definition = json_decode($query, true, 512, JSON_THROW_ON_ERROR);
                 if (!is_array($definition) || empty($definition['_collection'])) {
                     throw new InvalidArgumentException('MongoDB endpoint definition is invalid.');
                 }
-                $rows = $this->getDI()->get('adapterConnections')->executeMongo($endpoint, $definition);
-            } else {
-                $placeholders = $this->getDI()->get('adapterConnections')->placeholders($query);
+                $placeholders = $adapterConnections->mongoPlaceholders($definition);
                 if (in_array('last_cursor', $placeholders, true)) {
                     $parameters['last_cursor'] = $cursor ?: '0';
                 } elseif (in_array('last_sync_timestamp', $placeholders, true)) {
                     $parameters['last_sync_timestamp'] = $cursor ?: '1970-01-01 00:00:00';
                 }
-                $rows = $this->getDI()->get('adapterConnections')->execute($endpoint, $query, $parameters);
+                $rows = $adapterConnections->executeMongo($endpoint, $definition, $parameters);
+            } else {
+                $placeholders = $adapterConnections->placeholders($query);
+                if (in_array('last_cursor', $placeholders, true)) {
+                    $parameters['last_cursor'] = $cursor ?: '0';
+                } elseif (in_array('last_sync_timestamp', $placeholders, true)) {
+                    $parameters['last_sync_timestamp'] = $cursor ?: '1970-01-01 00:00:00';
+                }
+                $rows = $adapterConnections->execute($endpoint, $query, $parameters);
             }
             $payload = $this->getDI()->get('transformer')->transform($rows, [
                 'tenant_public_id' => $endpoint['tenant_public_id'],
@@ -99,7 +106,7 @@ class SyncTask extends Task
         } catch (Throwable $e) {
             $this->db->execute(
                 "UPDATE adapter_sync_checkpoints SET status = 'failed', last_error = :error, lease_token = NULL, lease_expires_at = NULL WHERE endpoint_id = :id AND lease_token = :lease",
-                ['error' => 'Adapter sync failed.' 'id' => (int)$endpoint['id'], 'lease' => $lease]
+                ['error' => 'Adapter sync failed.', 'id' => (int)$endpoint['id'], 'lease' => $lease]
             );
             throw $e;
         }

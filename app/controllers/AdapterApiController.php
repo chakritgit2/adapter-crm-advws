@@ -60,7 +60,7 @@ class AdapterApiController extends \Phalcon\Mvc\Controller
 
         try {
             $queryParams = $this->request->getQuery();
-            unset($queryParams['apikey']);
+            unset($queryParams['apikey'], $queryParams['_url']);
             $connection = $endpoint;
             $engine = strtolower((string)$endpoint['engine']);
             if ($engine === 'mongodb') {
@@ -68,10 +68,7 @@ class AdapterApiController extends \Phalcon\Mvc\Controller
                 if (!is_array($definition) || empty($definition['_collection'])) {
                     throw new InvalidArgumentException('MongoDB endpoint definition is invalid.');
                 }
-                if (!empty($queryParams)) {
-                    throw new InvalidArgumentException('MongoDB dynamic filters are not enabled for this endpoint.');
-                }
-                $rows = $this->getDI()->get('adapterConnections')->executeMongo($connection, $definition);
+                $rows = $this->getDI()->get('adapterConnections')->executeMongo($connection, $definition, $queryParams);
             } else {
                 $rows = $this->getDI()->get('adapterConnections')->execute($connection, (string)$endpoint['query_template'], $queryParams);
             }
