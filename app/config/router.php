@@ -328,6 +328,7 @@ $adapterGroup->addPost('/connections/test/{id:[0-9]+}', ['action' => 'connection
 $adapterGroup->addPost('/connections/delete/{id:[0-9]+}', ['action' => 'connectionDelete']);
 $adapterGroup->addGet('/endpoints/create', ['action' => 'endpointCreate']);
 $adapterGroup->addPost('/endpoints/store', ['action' => 'endpointStore']);
+$adapterGroup->addPost('/endpoints/preview', ['action' => 'endpointPreview']);
 $adapterGroup->addGet('/endpoints/edit/{id:[0-9]+}', ['action' => 'endpointEdit']);
 $adapterGroup->addPost('/endpoints/update/{id:[0-9]+}', ['action' => 'endpointUpdate']);
 $adapterGroup->addPost('/endpoints/toggle/{id:[0-9]+}', ['action' => 'endpointToggle']);

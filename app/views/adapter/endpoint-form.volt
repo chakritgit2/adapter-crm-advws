@@ -47,6 +47,19 @@
             <textarea required name="query_template" id="query-template" rows="8" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm text-slate-900 placeholder-slate-400 font-mono shadow-xs focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" placeholder="Select a connection to load a matching query example">{{ endpoint['query_template']|default('') }}</textarea>
             <p id="query-help" class="text-xs text-slate-500 mt-1">Use <code>&#123;&#123;variable&#125;&#125;</code> placeholders for request values. SQL placeholders must be unquoted and also accept <code>:named</code>; MongoDB accepts a JSON filter or a <code>_pipeline</code> aggregation.</p>
             <p id="query-parameters" class="text-xs text-slate-500 mt-1"></p>
+            <div id="query-preview-panel" class="hidden mt-4 rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-3">
+                <div class="flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-2">
+                        <label for="preview-parameters" class="block text-sm font-medium text-slate-700">Preview parameters (JSON)</label>
+                        <button type="button" id="refresh-preview-parameters" title="Regenerate sample parameters from query variables" class="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500 rounded px-1 transition-colors"><i class="fas fa-sync-alt"></i> Refresh</button>
+                    </div>
+                    <button type="button" id="run-query-preview" class="inline-flex items-center px-3 py-1.5 rounded-lg bg-slate-900 text-white text-xs font-medium hover:bg-slate-800 focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">Run preview</button>
+                </div>
+                <textarea id="preview-parameters" rows="2" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm text-slate-900 placeholder-slate-400 font-mono shadow-xs focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" placeholder='{"status":"active","kiosk_ids":[7,8]}'></textarea>
+                <p class="text-xs text-slate-500">Preview displays a maximum of 5 rows. Use JSON arrays for MongoDB list parameters.</p>
+                <p id="query-preview-status" class="text-xs text-slate-600" aria-live="polite"></p>
+                <pre id="query-preview-output" class="hidden max-h-72 overflow-auto rounded-lg bg-slate-950 text-slate-100 text-xs p-3 whitespace-pre-wrap"></pre>
+            </div>
         </div>
 
         <div class="border-t border-slate-200 pt-5 space-y-4">
@@ -109,6 +122,13 @@
     var help = document.getElementById('query-help');
     var parameterHelp = document.getElementById('query-parameters');
     var insertBtn = document.getElementById('insert-example');
+    var previewPanel = document.getElementById('query-preview-panel');
+    var previewParameters = document.getElementById('preview-parameters');
+    var previewStatus = document.getElementById('query-preview-status');
+    var previewOutput = document.getElementById('query-preview-output');
+    var previewButton = document.getElementById('run-query-preview');
+    var refreshPreviewButton = document.getElementById('refresh-preview-parameters');
+    var csrfToken = document.querySelector('input[name="csrf_token"]');
     function selectedEngine() {
         var option = select.options[select.selectedIndex];
         return option ? (option.getAttribute('data-engine') || '') : '';
@@ -125,6 +145,13 @@
         }
         return variables;
     }
+    function sampleParametersJson() {
+        var sample = {};
+        queryVariables().forEach(function (name) {
+            sample[name] = /(^|_)ids$/.test(name) ? [1, 2] : 'value';
+        });
+        return JSON.stringify(sample);
+    }
     function updateParameterHelp() {
         if (!parameterHelp) return;
         var variables = queryVariables();
@@ -140,6 +167,9 @@
             ? 'Request parameters: ' + variables.join(', ')
             : 'No request variables declared.';
         parameterHelp.className = 'text-xs text-slate-500 mt-1';
+        if (previewParameters && !previewParameters.value) {
+            previewParameters.placeholder = variables.length ? sampleParametersJson() : '{}';
+        }
     }
     function applyEngine() {
         var engine = selectedEngine();
@@ -149,13 +179,67 @@
             }
             help.innerHTML = hints[engine];
             insertBtn.classList.remove('hidden');
+            previewPanel.classList.remove('hidden');
         } else {
             textarea.placeholder = 'Select a connection to load a matching query example';
             help.innerHTML = 'Use <code>' + variable('status') + '</code> placeholders for request values. SQL also accepts <code>:named</code> placeholders; MongoDB accepts a JSON filter or a <code>_pipeline</code> aggregation.';
             insertBtn.classList.add('hidden');
+            previewPanel.classList.add('hidden');
         }
         updateParameterHelp();
     }
+    function setPreviewStatus(message, isError) {
+        previewStatus.textContent = message || '';
+        previewStatus.className = isError ? 'text-xs text-red-600' : 'text-xs text-slate-600';
+    }
+    previewButton.addEventListener('click', function () {
+        if (!select.value) {
+            setPreviewStatus('Select a connection before running a preview.', true);
+            return;
+        }
+        previewButton.disabled = true;
+        previewButton.textContent = 'Running...';
+        previewOutput.classList.add('hidden');
+        previewOutput.textContent = '';
+        setPreviewStatus('Running query preview...', false);
+
+        var body = new FormData();
+        body.append('csrf_token', csrfToken ? csrfToken.value : '');
+        body.append('connection_id', select.value);
+        body.append('query_template', textarea.value);
+        body.append('parameters_json', previewParameters.value || '{}');
+
+        fetch('{{ adapterBaseUrl }}/endpoints/preview', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {'X-Requested-With': 'XMLHttpRequest'},
+            body: body
+        }).then(function (response) {
+            return response.json().catch(function () {
+                return {status: 'error', message: 'The server returned an invalid response.'};
+            }).then(function (data) {
+                return {ok: response.ok, data: data};
+            });
+        }).then(function (result) {
+            previewButton.disabled = false;
+            previewButton.textContent = 'Run preview';
+            if (!result.ok || result.data.status !== 'success') {
+                setPreviewStatus(result.data.message || 'Query preview failed.', true);
+                return;
+            }
+            setPreviewStatus('Showing ' + result.data.displayed + ' of ' + result.data.row_count + ' rows (maximum 5).', false);
+            previewOutput.textContent = JSON.stringify(result.data.rows, null, 2);
+            previewOutput.classList.remove('hidden');
+        }).catch(function () {
+            previewButton.disabled = false;
+            previewButton.textContent = 'Run preview';
+            setPreviewStatus('Query preview request failed.', true);
+        });
+    });
+    refreshPreviewButton.addEventListener('click', function () {
+        previewParameters.value = sampleParametersJson();
+        previewParameters.focus();
+    });
     insertBtn.addEventListener('click', function () {
         var example = examples[selectedEngine()];
         if (example) {
@@ -164,7 +248,12 @@
             updateParameterHelp();
         }
     });
-    textarea.addEventListener('input', updateParameterHelp);
+    textarea.addEventListener('input', function () {
+        updateParameterHelp();
+        previewOutput.classList.add('hidden');
+        previewOutput.textContent = '';
+        setPreviewStatus('', false);
+    });
     select.addEventListener('change', applyEngine);
     applyEngine();
 })();

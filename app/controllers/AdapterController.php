@@ -218,6 +218,77 @@ class AdapterController extends TenantBaseController
         $this->view->pick('adapter/endpoint-created');
     }
 
+    public function endpointPreviewAction()
+    {
+        $this->requireCsrf();
+        $startedAt = microtime(true);
+        $connection = $this->findConnection((int)$this->request->getPost('connection_id', 'int', 0));
+        if (!$connection) {
+            return $this->json(['status' => 'error', 'message' => 'Select a valid connection.'], 404);
+        }
+
+        try {
+            $query = trim((string)$this->request->getPost('query_template'));
+            $this->endpointTemplateParameters($connection, $query);
+
+            $parameters = [];
+            $parametersJson = trim((string)$this->request->getPost('parameters_json'));
+            if ($parametersJson !== '') {
+                if (!str_starts_with($parametersJson, '{')) {
+                    throw new InvalidArgumentException('Preview parameters must be a JSON object.');
+                }
+                try {
+                    $decoded = json_decode($parametersJson, true, 512, JSON_THROW_ON_ERROR);
+                } catch (JsonException $e) {
+                    throw new InvalidArgumentException('Preview parameters must be valid JSON.');
+                }
+                if (!is_array($decoded)) {
+                    throw new InvalidArgumentException('Preview parameters must be a JSON object.');
+                }
+                $parameters = $decoded;
+            }
+
+            if (strtolower((string)$connection['engine']) === 'mongodb') {
+                $definition = json_decode($query, true);
+                $rows = $this->adapterConnections->executeMongo($connection, $definition, $parameters);
+            } else {
+                $rows = $this->adapterConnections->execute($connection, $query, $parameters);
+            }
+
+            $rowCount = count($rows);
+            $rows = array_slice($rows, 0, 5);
+            $this->adapterLogs->connection([
+                'tenant_id' => $this->currentTenantId,
+                'company_id' => $this->currentCompanyId,
+                'connection_id' => (int)$connection['id'],
+                'event_type' => 'endpoint_preview',
+                'status' => 'success',
+                'duration_ms' => (int)round((microtime(true) - $startedAt) * 1000),
+                'message' => 'Endpoint preview succeeded.',
+            ]);
+            return $this->json([
+                'status' => 'success',
+                'rows' => $rows,
+                'row_count' => $rowCount,
+                'displayed' => count($rows),
+                'truncated' => $rowCount > 5,
+            ]);
+        } catch (InvalidArgumentException $e) {
+            return $this->json(['status' => 'error', 'message' => $e->getMessage()], 400);
+        } catch (Throwable $e) {
+            $this->adapterLogs->connection([
+                'tenant_id' => $this->currentTenantId,
+                'company_id' => $this->currentCompanyId,
+                'connection_id' => (int)$connection['id'],
+                'event_type' => 'endpoint_preview',
+                'status' => 'failure',
+                'duration_ms' => (int)round((microtime(true) - $startedAt) * 1000),
+                'message' => 'Endpoint preview failed: ' . $e->getMessage(),
+            ]);
+            return $this->json(['status' => 'error', 'message' => 'Query preview failed. Check the connection and query template.'], 502);
+        }
+    }
+
     public function endpointEditAction()
     {
         $endpoint = $this->findEndpoint((int)$this->dispatcher->getParam('id'));
@@ -292,8 +363,8 @@ class AdapterController extends TenantBaseController
 
     private function endpointInput(?array $existing = null): array
     {
-        $apiName = trim((string)$this->request->getPost('api_name', 'string'));
-        $query = trim((string)$this->request->getPost('query_template', 'string', ''));
+        $apiName = trim((string)$this->request->getPost('api_name'));
+        $query = trim((string)$this->request->getPost('query_template'));
         $connectionId = (int)$this->request->getPost('connection_id', 'int', 0);
         $connection = $this->findConnection($connectionId);
         $redirectPath = $existing
@@ -306,53 +377,10 @@ class AdapterController extends TenantBaseController
         if (!$connection) {
             return ['error' => 'Select a valid connection.', 'path' => $redirectPath, 'values' => []];
         }
-        $queryWithoutVariables = preg_replace('/\{\{\s*[A-Za-z_][A-Za-z0-9_]*\s*\}\}/', '', $query);
-        if (str_contains((string)$queryWithoutVariables, '{{') || str_contains((string)$queryWithoutVariables, '}}')) {
-            return ['error' => 'Query variables must use the {{variable_name}} format.', 'path' => $redirectPath, 'values' => []];
-        }
-        $templateParameters = [];
-        if (strtolower((string)$connection['engine']) === 'mongodb') {
-            if ($query === '') {
-                return ['error' => 'MongoDB query template is required.', 'path' => $redirectPath, 'values' => []];
-            }
-            try {
-                $definition = json_decode($query, true, 512, JSON_THROW_ON_ERROR);
-            } catch (JsonException $e) {
-                return ['error' => 'MongoDB query template must be a JSON object. Shell syntax such as db.collection.aggregate(...) is not supported.', 'path' => $redirectPath, 'values' => []];
-            }
-            $collection = is_array($definition) ? ($definition['_collection'] ?? null) : null;
-            if (!is_string($collection) || trim($collection) === '') {
-                return ['error' => 'MongoDB endpoints require a static _collection string.', 'path' => $redirectPath, 'values' => []];
-            }
-            if (preg_match('/\{\{|\}\}/', $collection)) {
-                return ['error' => 'MongoDB _collection cannot use request variables.', 'path' => $redirectPath, 'values' => []];
-            }
-            $invalidReservedKeys = array_values(array_filter(
-                array_keys($definition),
-                static fn($key) => str_starts_with((string)$key, '_') && !in_array($key, ['_collection', '_pipeline'], true)
-            ));
-            if ($invalidReservedKeys) {
-                return ['error' => 'Unsupported MongoDB option keys: ' . implode(', ', array_map('strval', $invalidReservedKeys)), 'path' => $redirectPath, 'values' => []];
-            }
-            try {
-                if (array_key_exists('_pipeline', $definition)) {
-                    if (count($definition) !== 2 || !is_array($definition['_pipeline'])) {
-                        throw new InvalidArgumentException('MongoDB aggregation templates require only _collection and a _pipeline array.');
-                    }
-                    $this->adapterConnections->validateMongoPipeline($definition['_pipeline']);
-                }
-                $templateParameters = $this->adapterConnections->mongoPlaceholders($definition);
-            } catch (InvalidArgumentException $e) {
-                return ['error' => $e->getMessage(), 'path' => $redirectPath, 'values' => []];
-            }
-        } elseif ($query === '' || substr_count($query, ';') > 0 || !preg_match('/^\s*(SELECT|WITH)\b/i', $query)) {
-            return ['error' => 'Only one read-only SELECT/WITH query is allowed.', 'path' => $redirectPath, 'values' => []];
-        } else {
-            $templateParameters = $this->adapterConnections->placeholders($query);
-        }
-        $reservedParameters = array_intersect(['apikey', '_url'], $templateParameters);
-        if ($reservedParameters) {
-            return ['error' => 'These query variable names are reserved: ' . implode(', ', $reservedParameters), 'path' => $redirectPath, 'values' => []];
+        try {
+            $this->endpointTemplateParameters($connection, $query);
+        } catch (InvalidArgumentException $e) {
+            return ['error' => $e->getMessage(), 'path' => $redirectPath, 'values' => []];
         }
 
         $duplicateSql = 'SELECT id FROM adapter_endpoints WHERE api_name = :api_name';
@@ -365,7 +393,7 @@ class AdapterController extends TenantBaseController
             return ['error' => 'That API name is already in use.', 'path' => $redirectPath, 'values' => []];
         }
 
-        $webhookApiKey = (string)$this->request->getPost('webhook_api_key', 'string');
+        $webhookApiKey = (string)$this->request->getPost('webhook_api_key');
         $webhookCiphertext = $existing['webhook_api_key_ciphertext'] ?? null;
         if ($webhookApiKey !== '') {
             $webhookCiphertext = $this->getDI()->get('adapterEncryption')->encrypt($webhookApiKey);
@@ -377,22 +405,72 @@ class AdapterController extends TenantBaseController
             'query_template' => $query,
             'enabled' => $this->request->getPost('enabled', 'int', 0) === 1 ? 1 : 0,
             'sync_enabled' => $this->request->getPost('sync_enabled', 'int', 0) === 1 ? 1 : 0,
-            'sync_cursor_column' => trim((string)$this->request->getPost('sync_cursor_column', 'string')) ?: null,
-            'webhook_url' => trim((string)$this->request->getPost('webhook_url', 'string')) ?: null,
+            'sync_cursor_column' => trim((string)$this->request->getPost('sync_cursor_column')) ?: null,
+            'webhook_url' => trim((string)$this->request->getPost('webhook_url')) ?: null,
             'webhook_api_key_ciphertext' => $webhookCiphertext,
         ]];
     }
 
+    private function endpointTemplateParameters(array $connection, string $query): array
+    {
+        if (strtolower((string)$connection['engine']) === 'mongodb') {
+            if ($query === '') {
+                throw new InvalidArgumentException('MongoDB query template is required.');
+            }
+            try {
+                $definition = json_decode($query, true, 512, JSON_THROW_ON_ERROR);
+            } catch (JsonException $e) {
+                throw new InvalidArgumentException('MongoDB query template must be a JSON object. Shell syntax such as db.collection.aggregate(...) is not supported.');
+            }
+            $collection = is_array($definition) ? ($definition['_collection'] ?? null) : null;
+            if (!is_string($collection) || trim($collection) === '') {
+                throw new InvalidArgumentException('MongoDB endpoints require a static _collection string.');
+            }
+            if (preg_match('/\{\{|\}\}/', $collection)) {
+                throw new InvalidArgumentException('MongoDB _collection cannot use request variables.');
+            }
+            $invalidReservedKeys = array_values(array_filter(
+                array_keys($definition),
+                static fn($key) => str_starts_with((string)$key, '_') && !in_array($key, ['_collection', '_pipeline'], true)
+            ));
+            if ($invalidReservedKeys) {
+                throw new InvalidArgumentException('Unsupported MongoDB option keys: ' . implode(', ', array_map('strval', $invalidReservedKeys)));
+            }
+            if (array_key_exists('_pipeline', $definition)) {
+                if (count($definition) !== 2 || !is_array($definition['_pipeline'])) {
+                    throw new InvalidArgumentException('MongoDB aggregation templates require only _collection and a _pipeline array.');
+                }
+                $this->adapterConnections->validateMongoPipeline($definition['_pipeline']);
+            }
+            $templateParameters = $this->adapterConnections->mongoPlaceholders($definition);
+        } else {
+            if ($query === '' || substr_count($query, ';') > 0 || !preg_match('/^\s*(SELECT|WITH)\b/i', $query)) {
+                throw new InvalidArgumentException('Only one read-only SELECT/WITH query is allowed.');
+            }
+            $queryWithoutVariables = preg_replace('/\{\{\s*[A-Za-z_][A-Za-z0-9_]*\s*\}\}/', '', $query);
+            if (str_contains((string)$queryWithoutVariables, '{{') || str_contains((string)$queryWithoutVariables, '}}')) {
+                throw new InvalidArgumentException('Query variables must use the {{variable_name}} format.');
+            }
+            $templateParameters = $this->adapterConnections->placeholders($query);
+        }
+
+        $reservedParameters = array_intersect(['apikey', '_url'], $templateParameters);
+        if ($reservedParameters) {
+            throw new InvalidArgumentException('These query variable names are reserved: ' . implode(', ', $reservedParameters));
+        }
+        return $templateParameters;
+    }
+
     private function connectionInput(?array $existing = null): array
     {
-        $name = trim((string)$this->request->getPost('name', 'string'));
-        $engine = strtolower(trim((string)$this->request->getPost('engine', 'string')));
-        $host = trim((string)$this->request->getPost('host', 'string'));
+        $name = trim((string)$this->request->getPost('name'));
+        $engine = strtolower(trim((string)$this->request->getPost('engine')));
+        $host = trim((string)$this->request->getPost('host'));
         $port = (int)$this->request->getPost('port', 'int', 0);
-        $dbName = trim((string)$this->request->getPost('db_name', 'string'));
-        $username = trim((string)$this->request->getPost('username', 'string'));
-        $password = (string)$this->request->getPost('password', 'string');
-        $optionsJson = trim((string)$this->request->getPost('options_json', 'string'));
+        $dbName = trim((string)$this->request->getPost('db_name'));
+        $username = trim((string)$this->request->getPost('username'));
+        $password = (string)$this->request->getPost('password');
+        $optionsJson = trim((string)$this->request->getPost('options_json'));
         if ($name === '' || $host === '' || $dbName === '' || !in_array($engine, ['mysql', 'mariadb', 'pgsql', 'mongodb'], true)) {
             return ['error' => 'Name, engine, host, and database are required.', 'values' => []];
         }
