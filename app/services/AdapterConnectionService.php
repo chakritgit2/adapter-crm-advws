@@ -167,6 +167,9 @@ class AdapterConnectionService
             throw new InvalidArgumentException('MongoDB collection names cannot use request variables.');
         }
 
+        $allowedExtras = $this->mongoAllowedExtraParams($filter['_allow_params'] ?? null);
+        unset($filter['_allow_params']);
+
         $isAggregate = array_key_exists('_pipeline', $filter);
         if ($isAggregate) {
             if (count($filter) !== 2 || !is_array($filter['_pipeline'])) {
@@ -176,7 +179,7 @@ class AdapterConnectionService
         }
 
         $placeholders = $this->mongoPlaceholders($filter);
-        $this->assertParameters($placeholders, $parameters);
+        $this->assertParameters($placeholders, $parameters, $allowedExtras);
         $filter = $this->resolveMongoTemplate($filter, $parameters);
         $collection = (string)$filter['_collection'];
         unset($filter['_collection']);
@@ -323,7 +326,7 @@ class AdapterConnectionService
         return $value === [] || array_keys($value) === range(0, count($value) - 1);
     }
 
-    private function assertParameters(array $placeholders, array $parameters): void
+    private function assertParameters(array $placeholders, array $parameters, array $allowedExtras = []): void
     {
         foreach (['apikey', '_url'] as $reserved) {
             if (in_array($reserved, $placeholders, true)) {
@@ -336,7 +339,7 @@ class AdapterConnectionService
             }
         }
         foreach (array_keys($parameters) as $name) {
-            if (!in_array($name, $placeholders, true)) {
+            if (!in_array($name, $placeholders, true) && !in_array($name, $allowedExtras, true)) {
                 throw new InvalidArgumentException(sprintf('Unexpected query parameter: %s', $name));
             }
         }
@@ -464,6 +467,25 @@ class AdapterConnectionService
         }
         if (preg_match('/^-?(?:[0-9]+\.[0-9]+|\.[0-9]+)$/', $trimmed)) {
             return (float)$trimmed;
+        }
+        return $value;
+    }
+
+    private function mongoAllowedExtraParams($value): array
+    {
+        if ($value === null) {
+            return [];
+        }
+        if (!is_array($value) || !$this->isList($value)) {
+            throw new InvalidArgumentException('MongoDB _allow_params must be a list of parameter names.');
+        }
+        foreach ($value as $name) {
+            if (!is_string($name) || !preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', $name)) {
+                throw new InvalidArgumentException('MongoDB _allow_params entries must be static parameter names.');
+            }
+            if (in_array($name, ['apikey', '_url'], true)) {
+                throw new InvalidArgumentException(sprintf('MongoDB _allow_params cannot contain reserved parameters: %s', $name));
+            }
         }
         return $value;
     }

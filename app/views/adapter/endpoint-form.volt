@@ -115,7 +115,7 @@
         mysql: 'Use <code>' + variable('status') + '</code> or <code>:status</code> placeholders. Do not quote SQL placeholders. Call the endpoint with <code>?status=active</code>.',
         mariadb: 'Use <code>' + variable('status') + '</code> or <code>:status</code> placeholders. Do not quote SQL placeholders. Call the endpoint with <code>?status=active</code>.',
         pgsql: 'Use <code>' + variable('status') + '</code> or <code>:status</code> placeholders. Do not quote SQL placeholders. Call the endpoint with <code>?status=active</code>.',
-        mongodb: 'Use a JSON filter or a <code>_pipeline</code> array. Variables belong in match/filter string values; array parameters in <code>$in</code>/<code>$nin</code>/<code>$all</code> accept <code>?kiosk_ids[]=7&amp;kiosk_ids[]=8</code> or comma-separated <code>?kiosk_ids=7,8</code>. Collection names, field paths, and filter keys remain fixed.'
+        mongodb: 'Use a JSON filter or a <code>_pipeline</code> array. Variables belong in match/filter string values; array parameters in <code>$in</code>/<code>$nin</code>/<code>$all</code> accept <code>?kiosk_ids[]=7&amp;kiosk_ids[]=8</code> or comma-separated <code>?kiosk_ids=7,8</code>. Declare ignorable request keys with <code>"_allow_params": ["user_id"]</code>. Collection names, field paths, and filter keys remain fixed.'
     };
     var select = document.getElementById('connection-select');
     var textarea = document.getElementById('query-template');
