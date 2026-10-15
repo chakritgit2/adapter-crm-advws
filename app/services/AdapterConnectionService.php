@@ -52,6 +52,11 @@ class AdapterConnectionService
         '$unwind' => true,
         '$vectorSearch' => true,
     ];
+    private const MONGO_ARRAY_VALUE_OPERATORS = [
+        '$all' => true,
+        '$in' => true,
+        '$nin' => true,
+    ];
     private const MONGO_STATIC_VALUE_FIELDS = [
         'as' => true,
         'coll' => true,
@@ -377,6 +382,13 @@ class AdapterConnectionService
         if (is_array($value)) {
             $resolved = [];
             foreach ($value as $key => $item) {
+                if (is_string($key) && isset(self::MONGO_ARRAY_VALUE_OPERATORS[$key]) && is_string($item)) {
+                    $names = $this->templateVariableNames($item);
+                    if (count($names) === 1 && preg_match('/^\{\{\s*' . preg_quote($names[0], '/') . '\s*\}\}$/', $item)) {
+                        $resolved[$key] = $this->mongoListParameterValue($parameters[$names[0]], $names[0]);
+                        continue;
+                    }
+                }
                 $resolved[$key] = $this->resolveMongoTemplate($item, $parameters);
             }
             return $resolved;
@@ -454,6 +466,29 @@ class AdapterConnectionService
             return (float)$trimmed;
         }
         return $value;
+    }
+
+    private function mongoListParameterValue($value, string $name): array
+    {
+        if (is_array($value)) {
+            return $this->mongoParameterValue($value);
+        }
+        if (!is_string($value)) {
+            return [$this->mongoParameterValue($value)];
+        }
+        $resolved = [];
+        foreach (explode(',', $value) as $segment) {
+            $segment = trim($segment);
+            if ($segment === '') {
+                continue;
+            }
+            $resolvedSegment = $this->mongoParameterValue($segment);
+            if (is_string($resolvedSegment)) {
+                throw new InvalidArgumentException(sprintf('MongoDB list parameter must contain only numeric or boolean values: %s', $name));
+            }
+            $resolved[] = $resolvedSegment;
+        }
+        return $resolved;
     }
 
     private function templateVariableNames(string $value): array
